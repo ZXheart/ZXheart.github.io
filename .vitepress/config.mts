@@ -9,10 +9,19 @@ export default defineConfig({
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     logo: '/favicon.ico',
+    search: { provider: 'local' },
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Examples', link: '/examples/markdown-examples', activeMatch: '/examples/' },
-      { text: 'Javascript', link: '/javascript/basic/grammar-and-types', activeMatch: '/javascript/' },
+      {
+        text: 'Examples',
+        link: '/examples/markdown-examples',
+        activeMatch: '/examples/',
+      },
+      {
+        text: 'Javascript',
+        link: '/javascript/basic/grammar-and-types',
+        activeMatch: '/javascript/',
+      },
     ],
     sidebar: {
       '/javascript/': [
@@ -23,7 +32,10 @@ export default defineConfig({
               text: 'Basic',
               collapsed: true,
               items: [
-                { text: 'Grammar and types', link: '/javascript/basic/grammar-and-types' },
+                {
+                  text: 'Grammar and types',
+                  link: '/javascript/basic/grammar-and-types',
+                },
                 { text: 'Object', link: '/javascript/basic/object' },
               ],
             },
@@ -42,7 +54,9 @@ export default defineConfig({
         },
       ],
     },
-    socialLinks: [{ icon: 'github', link: 'https://github.com/vuejs/vitepress' }],
+    socialLinks: [
+      { icon: 'github', link: 'https://github.com/vuejs/vitepress' },
+    ],
   },
   vite: {},
 })
