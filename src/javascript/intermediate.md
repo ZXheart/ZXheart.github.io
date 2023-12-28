@@ -1,0 +1,3 @@
+# Intermediate JavaScript
+
+## intermediate.md
