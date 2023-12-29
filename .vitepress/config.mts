@@ -15,10 +15,10 @@ export default defineConfig({
       '/javascript/': { base: '/javascript/', items: sidebarJS() },
       '/examples/': { base: '/examples/', items: sidebarEg() },
       '/github/': { base: '/github/', items: sidebarGithub() },
+      '/vite-press/': { base: '/vite-press/', items: sidebarVitePress() },
     },
     socialLinks: [{ icon: 'github', link: 'https://github.com/vuejs/vitepress' }],
   },
-  vite: {},
 })
 
 function nav(): DefaultTheme.NavItem[] {
@@ -40,6 +40,11 @@ function nav(): DefaultTheme.NavItem[] {
         { text: 'Github actions', link: '/github/actions/actions', activeMatch: '/actions/' },
       ],
       activeMatch: '/github/',
+    },
+    {
+      text: 'VitePress',
+      items: [{ text: 'deployment', link: '/vite-press/deployment/start', activeMatch: '/deployment/' }],
+      activeMatch: '/vite-press/',
     },
   ]
 }
@@ -75,5 +80,18 @@ function sidebarGithub(): DefaultTheme.SidebarItem[] {
   return [
     { text: '基本使用', collapsed: false, items: [{ text: '注册', link: 'basic/register' }] },
     { text: 'Actions', collapsed: false, items: [{ text: 'Actions', link: 'actions/actions' }] },
+  ]
+}
+function sidebarVitePress(): DefaultTheme.SidebarItem[] {
+  return [
+    {
+      text: '记录VitePress部署流程',
+      collapsed: false,
+      items: [
+        { text: '开始', link: 'deployment/start' },
+        { text: '配置', link: 'deployment/configure' },
+        { text: '部署', link: 'deployment/deploy' },
+      ],
+    },
   ]
 }
