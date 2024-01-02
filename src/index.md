@@ -4,7 +4,7 @@ layout: home
 
 hero:
   name: "Keep going"
-  text: "Force myself to make a change"
+  text: "Force yourself to make a change"
   tagline: If you can't fly then run, if you can't run then walk, if you can't walk then crawl, but whatever you do you have to keep moving forward.
   actions:
     - theme: brand
