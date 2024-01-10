@@ -17,6 +17,7 @@ export default defineConfig({
       '/examples/': { base: '/examples/', items: sidebarEg() },
       '/github/': { base: '/github/', items: sidebarGithub() },
       '/vite-press/': { base: '/vite-press/', items: sidebarVitePress() },
+      '/css/': { base: '/css/', items: sidebarCSS() },
     },
     socialLinks: [{ icon: 'github', link: 'https://github.com/vuejs/vitepress' }],
     footer: {
@@ -53,8 +54,16 @@ function nav(): DefaultTheme.NavItem[] {
     },
     {
       text: 'VitePress',
-      items: [{ text: 'Deployment process', link: '/vite-press/deployment/start', activeMatch: '/deployment/' }],
+      items: [{ text: 'Deployment process', link: '/vite-press/deployment/01-start', activeMatch: '/deployment/' }],
       activeMatch: '/vite-press/',
+    },
+    {
+      text: 'CSS',
+      items: [
+        { text: 'Grid layout', link: '/css/grid-layout/01-concepts', activeMatch: '/grid-layout/' },
+        { text: 'Flex box', link: '/css/flex-box/01-concepts', activeMatch: '/flex-box/' },
+      ],
+      activeMatch: '/css/',
     },
   ]
 }
@@ -98,10 +107,24 @@ function sidebarVitePress(): DefaultTheme.SidebarItem[] {
       text: 'Deployment process',
       collapsed: false,
       items: [
-        { text: '开始', link: 'deployment/start' },
-        { text: '配置', link: 'deployment/configure' },
-        { text: '部署', link: 'deployment/deploy' },
+        { text: '开始', link: 'deployment/01-start' },
+        { text: '配置', link: 'deployment/02-configure' },
+        { text: '部署', link: 'deployment/03-deploy' },
       ],
+    },
+  ]
+}
+function sidebarCSS(): DefaultTheme.SidebarItem[] {
+  return [
+    {
+      text: 'Basic concepts of grid layout',
+      collapsed: false,
+      items: [{ text: '网格布局概念', link: 'grid-layout/01-concepts' }],
+    },
+    {
+      text: 'Basic concepts of flex box',
+      collapsed: false,
+      items: [{ text: '网格布局概念', link: 'flex-box/01-concepts' }],
     },
   ]
 }

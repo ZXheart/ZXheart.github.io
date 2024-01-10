@@ -5,7 +5,7 @@
 本文记录自己搭建vitepress并自动部署到github pages的过程，也是搭建本博客后第一篇文章。搭建过程中遇到不少奇怪问题，可能是VitePress还比较新的缘故(初写时vitepress官网还只有英文版本，本人英文一塌糊涂)，网上的搭建教程没得到比较好的解决。最后都是通过[官方网站](https://vitepress.dev/)解决的（本文完成时-2024/01/02，vitepress官网已有中文版本，致敬尤雨溪）
 
 ## 前置条件
-我只是一个前端小白，所以本文只记录我自己的搭建过程。以下是搭建时使用的工具，不同工具可能会导致细微差别，但是大体上都是一样的。
+我只是一个前端小白，深层的东西一概不知，本文只记录我自己的搭建过程。以下是搭建时使用的工具，不同工具可能会导致细微差别，但是大体上都是一样的。
 - [vscode](https://code.visualstudio.com/)：代码编辑器
 - [pnpm](https://pnpm.io/)：包管理工具
 - [git](https://git-scm.com/)：版本控制工具
@@ -15,7 +15,7 @@
 
 ### 由于是部署到github pages上，所以先创建一个github仓库再clone到本地可以省去不少麻烦
 
-1. 创建一个github仓库，名称必须是`<username>.github.io`，`<username>`是你的github用户名
+1. 创建一个github仓库，名称必须是`<username>.github.io`，`<username>`是你的github用户名。*注意，最好添加一个README.md,这样可以直接clone，否则还要自己连接仓库*
 2. 仓库顶栏找到`Settings`，左侧栏找到`Pages`，子标题找到`Build and deployment`，选择`Source`为`GitHub Actions`，点击`Save`，
 3. 本地随便创个文件夹，然后`git clone`
 
