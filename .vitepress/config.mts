@@ -1,4 +1,5 @@
 import { defineConfig, type DefaultTheme } from 'vitepress'
+import UnoCSS from 'unocss/vite'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -7,6 +8,9 @@ export default defineConfig({
   head: [['line', { rel: 'icon', href: '/favicon.ico' }]],
   srcDir: 'src',
   lastUpdated: true,
+  vite: {
+    plugins: [UnoCSS()],
+  },
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     logo: { light: '/logo-light.png', dark: '/logo-dark.png' },
@@ -25,6 +29,7 @@ export default defineConfig({
         'Released under the <a href="https://github.com/ZXheart/ZXheart.github.io?tab=MIT-1-ov-file"> MIT License.</a>',
       copyright: 'Copyright © 2023-present <a href="https://github.com/ZXheart/ZXheart.github.io">julien</a>',
     },
+    outline: { level: 'deep' },
   },
 })
 

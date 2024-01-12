@@ -1,8 +1,10 @@
-# 开始
+# VitePress是什么?
+
+VitePress是一个*静态站点生成器*(SSG - Static Site Generation)
 
 ## 前言
 
-本文记录自己搭建 vitepress 并自动部署到 github pages 的过程，也是搭建本博客后第一篇文章。搭建过程中遇到不少奇怪问题，可能是 VitePress 还比较新的缘故(初写时 vitepress 官网还只有英文版本，本人英文一塌糊涂)，网上的搭建教程没得到比较好的解决。最后都是通过[官方网站](https://vitepress.dev/)解决的（本文完成时-2024/01/02，vitepress 官网已有中文版本，致敬尤雨溪）
+本文记录自己搭建 vitepress 并自动部署到 github pages 的过程，也是搭建本博客后第一篇文章。搭建过程中遇到不少奇怪问题，可能是 VitePress 还比较新的缘故(初写时 vitepress 官网还只有英文版本，本人英文一塌糊涂)，网上的搭建教程没得到比较好的解决。最后都是通过[官网](https://vitepress.dev/)解决的（本文完成时-2024/01/02，vitepress 官网已有中文版本，致敬尤雨溪）
 
 ## 前置条件
 

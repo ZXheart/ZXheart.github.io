@@ -1,7 +1,3 @@
----
-outline: deep
----
-
 # config.mts
 
 这个文件是vitepress的配置文件，vitepress中基本所有重要信息都在这里，具体配置项可以参考[vitepress配置](https://vitepress.dev/zh/reference/default-theme-config)
@@ -177,4 +173,4 @@ export default defineConfig({
   // ...
 })
 ```
-以上是我搭建博客时碰到过问题或者觉得有必要记录的点，其它配置项基本一眼就看明白了，就不一一介绍了，具体配置项可以参考[vitepress配置](https://vitepress.dev/zh/reference/default-theme-config)。
+以上是我搭建博客时碰到过问题或者觉得有必要记录的点，其它配置项可以参考[vitepress配置](https://vitepress.dev/zh/reference/default-theme-config)。
