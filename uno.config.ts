@@ -1,6 +1,8 @@
-import { defineConfig, presetUno, presetIcons, presetAttributify } from 'unocss'
+import { defineConfig, presetUno, presetIcons } from 'unocss'
+import transformerDirectives from '@unocss/transformer-directives'
 declare module '@unocss/core' {}
 
 export default defineConfig({
-  presets: [presetUno(), presetIcons(), presetAttributify()],
+  presets: [presetUno(), presetIcons()],
+  transformers: [transformerDirectives()],
 })

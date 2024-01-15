@@ -8,6 +8,9 @@ export default defineConfig({
   head: [['line', { rel: 'icon', href: '/favicon.ico' }]],
   srcDir: 'src',
   lastUpdated: true,
+  markdown: {
+    lineNumbers: true,
+  },
   vite: {
     plugins: [UnoCSS()],
   },
