@@ -1,4 +1,4 @@
-import { defineConfig, type DefaultTheme } from 'vitepress'
+import { type DefaultTheme, defineConfig } from 'vitepress'
 import UnoCSS from 'unocss/vite'
 
 // https://vitepress.dev/reference/site-config
@@ -125,14 +125,14 @@ function sidebarVitePress(): DefaultTheme.SidebarItem[] {
 function sidebarCSS(): DefaultTheme.SidebarItem[] {
   return [
     {
-      text: 'Basic concepts of grid layout',
+      text: 'Grid layout',
       collapsed: false,
       items: [{ text: '网格布局概念', link: 'grid-layout/01-concepts' }],
     },
     {
-      text: 'Basic concepts of flex box',
+      text: 'Flex box',
       collapsed: false,
-      items: [{ text: '网格布局概念', link: 'flex-box/01-concepts' }],
+      items: [{ text: '弹性盒布局概念', link: 'flex-box/01-concepts' }],
     },
   ]
 }

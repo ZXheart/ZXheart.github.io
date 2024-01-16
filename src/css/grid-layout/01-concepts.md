@@ -6,13 +6,20 @@ import FrUnequalSize from '../components/grid/04-FrUnequalSize.vue'
 import FrAndAbsolute from '../components/grid/05-FrAndAbsolute.vue'
 import ImplicitGrid from '../components/grid/06-ImplicitGrid.vue'
 import MinmaxFunc from '../components/grid/07-MinmaxFunc.vue'
+import GridLines from '../components/grid/08-GridLines.vue'
+import AgainstLines from '../components/grid/09-AgainstLines.vue'
 </script>
 
-# :tada: 网格布局的基本概念
+# :satisfied: 前言
+
+记录学习grid布局，跟随[MDN](https://developer.mozilla.org/zh-CN/docs/Web/CSS/CSS_grid_layout/Basic_concepts_of_grid_layout)
+
+
+# :point_right: 网格布局的基本概念
 
 CSS网格布局引入二维网格布局系统，可用于处理网页布局的复杂性。这种布局模式是基于行和列的，可以让开发者将网页分割成多个区域，然后可以在这些区域中放置内容。
 
-##  网格容器(grid container)
+##  网格容器(Grid container)
 
 通过在元素上声明`display: grid` 或 `display: inline-grid`来创建一个网格容器。网格容器中的所有子元素都会成为*网格元素*。目前看来和正常
 block元素并无二致，其实这些*网格元素*任人摆布
@@ -38,7 +45,7 @@ block元素并无二致，其实这些*网格元素*任人摆布
 ```
 <Container /> 
 
-## 网格轨道(grid track)
+## 网格轨道(Grid tracks)
 
 ***网格轨道*是网格上任意两条相邻线之间的空间**。使用`grid-template-columns`和`grid-template-rows`属性或简写的`grid`属性来定义网格的行和列。
 
@@ -140,7 +147,6 @@ block元素并无二致，其实这些*网格元素*任人摆布
 正如之前所说，`fr`只会和其他`fr`按比例分配固额(px rem vw vh %...)之外的剩余空间。
 
 如下示例，网格容器中的子元素被分成了三列，每列宽度为1fr 100px 1fr，可用空间四等分，其中第二轨道占用了100px，其余轨道各占用一份。
-
 
 ``` vue
 <template>
@@ -274,14 +280,14 @@ minmax()函数定义一个长宽范围的闭区间。在设置*显示网格*或�
 ```
 <MinmaxFunc />
 
-1. 设置自动创建的行的大小，根据内容多少，自动创建的行高度最小为50px，最大会根据内容多少自动调整
+2. 设置自动创建的行的大小，根据内容多少，自动创建的行高度最小为50px，最大会根据内容多少自动调整
 ``` vue
 <template>
   <div class="
     grid 
     implicit <!-- [!code ++] -->
-     bg-#161618 b-rd-8px py-20px p-24px
-   " >
+    bg-#161618 b-rd-8px py-20px p-24px
+   ">
     <div class="common-item">
       1
       <div class="h-50px b-1 b-solid b-#42b883 b-rd-8px">高50px的内容</div>
@@ -310,6 +316,22 @@ minmax()函数定义一个长宽范围的闭区间。在设置*显示网格*或�
 ```
 <MinmaxFunc minmax="implicit" />
 
-## 网格线(grid line)
+## 网格线(Grid lines)
 
-我们先前定义网格时，定义的时网格轨道，不是网格线。网格布局为我们创建带编号的网格线，精确地定义每一个网格元素。
+我们先前定义网格时，定义的时是网格轨道，不是*网格线*。网格布局为我们创建带编号的网格线，精确地控制每一个网格元素。
+如下三列两行网格中，包含***四条纵向***网格线和***三条横向***网格线。
+
+<GridLines />
+
+网格线的编号顺序取决于文章的书写模式，我们自然是自左到右，编号1的网格线在最左边。同时网格线可以被命名，看这里[网格线命名]
+
+### 根据网格线定位元素
+
+使用`grid-column-start`、`grid-column-end`和`grid-row-start`、`grid-row-end`属性配合前边了解的网格线，可以精确地控制每一个网格元素。
+
+
+``` vue
+
+```
+css module 问题！
+<AgainstLines />

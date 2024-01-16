@@ -1,20 +1,24 @@
 {
   "name": "my-site",
+  "type": "module",
   "version": "1.0.0",
   "description": "",
-  "type": "module",
+  "author": "",
+  "license": "ISC",
+  "keywords": [],
   "main": "index.js",
   "scripts": {
     "docs:dev": "vitepress dev",
     "docs:build": "vitepress build",
-    "docs:preview": "vitepress preview"
+    "docs:preview": "vitepress preview",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
+    "@antfu/eslint-config": "^2.6.2",
     "@unocss/core": "^0.58.3",
     "@unocss/transformer-directives": "^0.58.3",
+    "eslint": "^8.56.0",
     "typescript": "^5.3.3",
     "unocss": "^0.58.3",
     "vite": "^5.0.11",
