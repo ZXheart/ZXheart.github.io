@@ -1,7 +1,7 @@
 <script setup lang="ts"></script>
 
 <template>
-  <div class="grid cols-150px bg-#161618 b-rd-8px py-20px p-24px">
+  <div class="common-wrapper grid grid-cols-[150px_150px_150px]">
     <div class="common-item">
       1
     </div>
@@ -20,11 +20,4 @@
   </div>
 </template>
 
-<style module>
-  .cols-150px {
-    grid-template-columns: 150px 150px 150px;
-  }
-  .common-item {
-    @apply b-rd-8px bg-#272843;
-  }
-</style>
+<style></style>

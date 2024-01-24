@@ -27,8 +27,8 @@ block元素并无二致，其实这些*网格元素*任人摆布
 ``` vue
 <template>
   <div class="
+    common-wrapper
     grid <!-- [!code ++] -->
-    bg-#161618  b-rd-8px my-20px py-20px p-24px
   ">
     <div class="common-item">1</div>
     <div class="common-item">2</div>
@@ -37,9 +37,14 @@ block元素并无二致，其实这些*网格元素*任人摆布
     <div class="common-item">5</div>
   </div>
 </template>
+
 <style>
+/* style标签上没有使用scope和module，该SFC定义两个style全局适用。其它文件直接引用不再声明 */
+  .common-wrapper{
+    @apply bg-soft-e b-rd-8px py-20px px-24px;
+  }
   .common-item {
-    @apply b-rd-8px bg-#272843;
+    @apply b-rd-8px bg-soft-a;
   }
 </style>
 ```
@@ -59,10 +64,9 @@ block元素并无二致，其实这些*网格元素*任人摆布
 ``` vue
 <template>
   <div class="
-     grid 
-     cols-150px <!-- [!code ++] -->
-     bg-#161618 b-rd-8px my-20px py-20px p-24px
-   ">
+    common-wrapper
+    grid grid-cols-[150px_150px_150px] <!-- [!code ++] -->
+  ">
     <div class="common-item">1</div>
     <div class="common-item">2</div>
     <div class="common-item">3</div>
@@ -70,14 +74,6 @@ block元素并无二致，其实这些*网格元素*任人摆布
     <div class="common-item">5</div>
   </div>
 </template>
-<style>
-  .cols-150px { /* [!code ++:3] */
-    grid-template-columns: 150px 150px 150px;
-  }
-  .common-item {
-    @apply b-rd-8px bg-#272843;
-  }
-</style>
 ```
 <Columns />
 
@@ -86,15 +82,14 @@ block元素并无二致，其实这些*网格元素*任人摆布
 `grid-template-columns`和`grid-template-rows`属性值可以是你知道的任何CSS长度单位，此外还有一个特殊的单位`fr`，它表示一个网格轨道的剩余空间。
 `fr`只会和其他`fr`按比例分配固额(px rem vw vh %...)之外的剩余空间。
 
- 如下示例，网格容器中的子元素被分成了三列，每列宽度为1fr，即三列等宽。
+网格容器中的子元素被分成了三列，每列宽度为1fr，即三列等宽。
 
 ``` vue
 <template>
   <div class="
-     grid 
-     cols-3fr <!-- [!code ++] -->
-     bg-#161618 b-rd-8px my-20px py-20px p-24px
-   ">
+    common-wrapper
+    grid grid-cols-3 <!-- [!code ++] -->
+  ">
     <div class="common-item">1</div>
     <div class="common-item">2</div>
     <div class="common-item">3</div>
@@ -102,28 +97,19 @@ block元素并无二致，其实这些*网格元素*任人摆布
     <div class="common-item">5</div>
   </div>
 </template>
-<style>
-  .cols-3fr { /* [!code ++:3] */
-    grid-template-columns: 1fr 1fr 1fr;
-  }
-  .common-item {
-    @apply b-rd-8px bg-#272843;
-  }
-</style>
 ```
 <FrUnit />
 
 ### 不同比例
 
-如下示例，网格容器中的子元素被分成了三列，每列宽度为1fr 2fr 1fr，可用空间四等分，其中第二轨道占用了两份，其余轨道各占用一份。
+网格容器中的子元素被分成了三列，每列宽度为1fr 2fr 1fr，可用空间四等分，其中第二轨道占用了两份，其余轨道各占用一份。
 
 ``` vue
 <template>
   <div class="
-     grid 
-     cols-unequal-fr <!-- [!code ++] -->
-     bg-#161618 b-rd-8px my-20px py-20px p-24px
-   ">
+    common-wrapper
+    grid grid-cols-[1fr_2fr_1fr] <!-- [!code ++] -->
+  ">
     <div class="common-item">1</div>
     <div class="common-item">2</div>
     <div class="common-item">3</div>
@@ -132,12 +118,6 @@ block元素并无二致，其实这些*网格元素*任人摆布
   </div>
 </template>
 <style>
-  .cols-unequal-fr { /* [!code ++:3] */
-    grid-template-columns: 1fr 2fr 1fr;
-  }
-  .common-item {
-    @apply b-rd-8px bg-#272843;
-  }
 </style>
 ```
 <FrUnequalSize />
@@ -146,14 +126,13 @@ block元素并无二致，其实这些*网格元素*任人摆布
 
 正如之前所说，`fr`只会和其他`fr`按比例分配固额(px rem vw vh %...)之外的剩余空间。
 
-如下示例，网格容器中的子元素被分成了三列，每列宽度为1fr 100px 1fr，可用空间四等分，其中第二轨道占用了100px，其余轨道各占用一份。
+网格容器中的子元素被分成了三列，每列宽度为1fr 100px 1fr，可用空间四等分，其中第二轨道占用了100px，其余轨道各占用一份。
 
 ``` vue
 <template>
   <div class="
-     grid 
-     cols-absolute-fr <!-- [!code ++] -->
-     bg-#161618 b-rd-8px my-20px py-20px p-24px
+    common-wrapper
+    grid grid-cols-[1fr_100px_1fr] <!-- [!code ++] -->
    ">
     <div class="common-item">1</div>
     <div class="common-item">2</div>
@@ -162,14 +141,6 @@ block元素并无二致，其实这些*网格元素*任人摆布
     <div class="common-item">5</div>
   </div>
 </template>
-<style> 
-  .cols-absolute-fr { /* [!code ++:3] */
-    grid-template-columns: 1fr 100px 1fr;
-  }
-  .common-item {
-    @apply b-rd-8px bg-#272843;
-  }
-</style>
 ```
 <FrAndAbsolute />
 
@@ -207,7 +178,7 @@ block元素并无二致，其实这些*网格元素*任人摆布
   grid-template-columns: repeat(4, 1fr 2fr);
 }
 
-/* 你也可以将示例2中`example2`改成如下写法，依然可行 */
+/* 你也可以将示例2中`example1`改成如下写法，依然可行 */
 .example3 {
   grid-template-columns: repeat(2, 100px 1fr 1fr 1fr) 1fr;
 }
@@ -216,20 +187,20 @@ block元素并无二致，其实这些*网格元素*任人摆布
 ### 显式和隐式网格轨道
 
  `grid-template-columns`和`grid-template-rows`属性定义的是显式网格轨道，它们定义了网格的结构。
- 如上示例，我们使用`grid-template-columns`显式定义了列轨道，但是网格容器会自行创建行轨道，这些行轨道称为隐式网格轨道。
+ 如上示例，我们使用`grid-template-columns`显式定义了列轨道，但是网格容器会自行创建行轨道，这些行轨道称为 ***隐式网格轨道***。
 
  默认**这些隐式轨道会自动调整大小，取决于它们轨道内的内容**
 
-你也可以通过`grid-auto-rows`和`grid-auto-columns`属性来定义隐式网格轨道的大小。
+ 也可以通过`grid-auto-rows`和`grid-auto-columns`属性来定义隐式网格轨道的大小。
 
-如下示例，使用`grid-auto-rows: 50px`来定义隐式网格轨道的高度为50px。
+ 使用`grid-auto-rows: 50px`来定义隐式网格轨道的高度为50px。
 
 ``` vue
 <template>
   <div class="
-    grid cols-absolute-fr 
+    common-wrapper
+    grid grid-cols-3 
     grid-auto-rows-50px <!-- [!code ++] -->
-     bg-#161618 b-rd-8px py-20px p-24px
   ">
     <div class="common-item">1</div>
     <div class="common-item">2</div>
@@ -238,14 +209,6 @@ block元素并无二致，其实这些*网格元素*任人摆布
     <div class="common-item">5</div>
   </div>
 </template>
-<style>
-  .cols-absolute-fr {
-    grid-template-columns: 1fr 100px 1fr;
-  }
-  .common-item {
-    @apply b-rd-8px bg-#272843;
-  }
-</style>
 ```
 <ImplicitGrid />
 
@@ -333,5 +296,4 @@ minmax()函数定义一个长宽范围的闭区间。在设置*显示网格*或�
 ``` vue
 
 ```
-css module 问题！
 <AgainstLines />

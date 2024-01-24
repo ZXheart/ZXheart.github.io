@@ -8,7 +8,7 @@
       b-2 b-solid b-t-#ffb6c1 b-b-#ffb6c1 b-l-#d8d8d8 b-r-#d8d8d8
       pos-relative"
     >
-      <div class="common-item pos-relative">
+      <div class="common-item-line pos-relative">
         1
         <!-- 纵1 & 2 -->
         <div
@@ -26,7 +26,7 @@
           纵2
         </div>
       </div>
-      <div class="common-item pos-relative">
+      <div class="common-item-line pos-relative">
         2
         <!-- 横1 & 2 -->
         <div
@@ -44,7 +44,7 @@
           横2
         </div>
       </div>
-      <div class="common-item pos-relative">
+      <div class="common-item-line pos-relative">
         3
         <!-- 纵3 & 4 -->
         <div
@@ -62,10 +62,10 @@
           纵4
         </div>
       </div>
-      <div class="common-item">
+      <div class="common-item-line">
         4
       </div>
-      <div class="common-item">
+      <div class="common-item-line">
         5
         <!-- 横3 -->
         <div
@@ -85,8 +85,8 @@
   </div>
 </template>
 
-<style module>
-  .common-item {
+<style>
+  .common-item-line {
     --at-apply: b-rd-8px bg-#272843 text-center lh-120px;
   }
 </style>

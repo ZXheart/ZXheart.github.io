@@ -2,8 +2,8 @@
 </script>
 
 <template>
-  <div class="grid bg-#161618 b-rd-8px py-20px p-24px">
-    <div class="common-item">
+  <div class="grid grid-cols-3 grid-auto-rows-50px bg-#161618 b-rd-8px py-20px p-24px">
+    <div class="common-item col-start-1 col-end-4 row-start-1 row-end-3">
       1
     </div>
     <div class="common-item">
@@ -21,8 +21,5 @@
   </div>
 </template>
 
-<style module>
-  .common-item {
-    @apply b-rd-8px bg-#272843;
-  }
+<style>
 </style>
