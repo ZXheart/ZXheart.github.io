@@ -20,7 +20,7 @@
     "@unocss/transformer-directives": "^0.58.3",
     "eslint": "^8.56.0",
     "typescript": "^5.3.3",
-    "unocss": "^0.58.3",
+    "unocss": "^0.58.4",
     "vite": "^5.0.11",
     "vitepress": "1.0.0-rc.40",
     "vue": "^3.4.8"
