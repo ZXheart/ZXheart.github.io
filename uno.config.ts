@@ -1,10 +1,10 @@
-import { defineConfig, presetIcons, presetUno,presetWind } from 'unocss'
+import { defineConfig, presetIcons, presetUno, presetWind } from 'unocss'
 import transformerDirectives from '@unocss/transformer-directives'
 
 declare module '@unocss/core' {}
 
 export default defineConfig({
-  presets: [presetUno(),presetWind(), presetIcons()],
+  presets: [presetUno(), presetWind(), presetIcons()],
   transformers: [transformerDirectives()],
   rules: [
     ['pos-center', { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }],

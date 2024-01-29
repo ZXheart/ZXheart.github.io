@@ -9,11 +9,11 @@ devDependencies:
     specifier: ^2.6.2
     version: 2.6.2(@vue/compiler-sfc@3.4.15)(eslint@8.56.0)(typescript@5.3.3)
   '@unocss/core':
-    specifier: ^0.58.3
-    version: 0.58.3
+    specifier: ^0.58.4
+    version: 0.58.4
   '@unocss/transformer-directives':
-    specifier: ^0.58.3
-    version: 0.58.3
+    specifier: ^0.58.4
+    version: 0.58.4
   eslint:
     specifier: ^8.56.0
     version: 8.56.0
@@ -1732,10 +1732,6 @@ packages:
       unconfig: 0.3.11
     dev: true
 
-  /@unocss/core@0.58.3:
-    resolution: {integrity: sha512-9hTxzsrSLh+07ql/lGhE+8ZbE9MTTeZeMx131cPf2jDJUxAZooLE5pBCoK0k77ZJGcribRrwPGkUScBNOK0cYQ==}
-    dev: true
-
   /@unocss/core@0.58.4:
     resolution: {integrity: sha512-wh4pxXUCkhC+C/0ct74PMYeZgX+oWuHj2mnvr09nM0WmvOm1HeeISrDCCBGcxmKbErUk+D1v3JgzXF7b6j2l4g==}
     dev: true
@@ -1835,14 +1831,6 @@ packages:
     resolution: {integrity: sha512-ZZTrAdl4WWmMjQdOqcOSWdgFH6kdFKZjPu4c6Ijxk7KvY2BW3nttTTBa7IYeuXFHVfcExUFqlOgRurt+NeWYyQ==}
     dev: true
 
-  /@unocss/rule-utils@0.58.3:
-    resolution: {integrity: sha512-0Px9gIW+VOKetZuYET19uamIRpk7A9c8sCzQuGlNvCLXKEWamqXz5asLtnvPzw6SwCXEQDgWXE9i+aeoXaM0Jg==}
-    engines: {node: '>=14'}
-    dependencies:
-      '@unocss/core': 0.58.3
-      magic-string: 0.30.5
-    dev: true
-
   /@unocss/rule-utils@0.58.4:
     resolution: {integrity: sha512-52Jp4I+joGTaDm7ehB/7uZ2kJL+9BZcYRDUVk4IDacDH5W9yxf1F75LzYT8jJVWXD/HIhiS0r9V6qhcBq2OWZw==}
     engines: {node: '>=14'}
@@ -1876,14 +1864,6 @@ packages:
     resolution: {integrity: sha512-GPz462ogvtb64W0iweuB0Dcm1snGsGte0RlVpFUeG2eWlVqKMRvNRtYuive2Ky2zSZKefWJQBGk3Ti+7CM4wFA==}
     dependencies:
       '@unocss/core': 0.58.4
-    dev: true
-
-  /@unocss/transformer-directives@0.58.3:
-    resolution: {integrity: sha512-JMfeA8GJz106UqafqsCDp6BBEU7TozZHpLw414CKZjOW1CuMmaKEGrlr2UCjCYgM1vH7KEFKRMwTRUEV3NvywQ==}
-    dependencies:
-      '@unocss/core': 0.58.3
-      '@unocss/rule-utils': 0.58.3
-      css-tree: 2.3.1
     dev: true
 
   /@unocss/transformer-directives@0.58.4:
