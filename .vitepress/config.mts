@@ -1,5 +1,7 @@
-import { type DefaultTheme, defineConfig } from 'vitepress'
+import { defineConfig } from 'vitepress'
 import UnoCSS from 'unocss/vite'
+
+import { nav, sidebarCSS, sidebarEg, sidebarGithub, sidebarJS, sidebarVitePress } from './theme-config'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -35,104 +37,3 @@ export default defineConfig({
     outline: { level: 'deep' },
   },
 })
-
-function nav(): DefaultTheme.NavItem[] {
-  return [
-    {
-      text: 'Examples',
-      link: '/examples/markdown-examples',
-      activeMatch: '/examples/',
-    },
-    {
-      text: 'Javascript',
-      items: [
-        { text: 'Basic', link: '/javascript/basic/grammar-and-types', activeMatch: '/basic/' },
-        { text: 'Intermediate', link: '/javascript/intermediate/intermediate', activeMatch: '/intermediate/' },
-        { text: 'Advanced', link: '/javascript/advanced/advanced', activeMatch: '/advanced/' },
-      ],
-      activeMatch: '/javascript/',
-    },
-    {
-      text: 'Github',
-      items: [
-        { text: 'Github register', link: '/github/basic/register', activeMatch: '/basic/' },
-        { text: 'Github actions', link: '/github/actions/actions', activeMatch: '/actions/' },
-      ],
-      activeMatch: '/github/',
-    },
-    {
-      text: 'VitePress',
-      items: [{ text: 'Deployment process', link: '/vite-press/deployment/01-start', activeMatch: '/deployment/' }],
-      activeMatch: '/vite-press/',
-    },
-    {
-      text: 'CSS',
-      items: [
-        { text: 'Grid layout', link: '/css/grid-layout/01-concepts', activeMatch: '/grid-layout/' },
-        { text: 'Flex box', link: '/css/flex-box/01-concepts', activeMatch: '/flex-box/' },
-      ],
-      activeMatch: '/css/',
-    },
-  ]
-}
-function sidebarJS(): DefaultTheme.SidebarItem[] {
-  return [
-    {
-      text: 'Basic',
-      collapsed: false,
-      items: [
-        { text: 'Grammar and types', link: 'basic/grammar-and-types' },
-        { text: 'Object', link: 'basic/object' },
-      ],
-    },
-    {
-      text: 'Intermediate',
-      collapsed: false,
-      items: [{ text: 'medium', link: 'intermediate/intermediate' }],
-    },
-    {
-      text: 'Advanced',
-      collapsed: false,
-      items: [{ text: 'high', link: 'advanced/advanced' }],
-    },
-  ]
-}
-function sidebarEg(): DefaultTheme.SidebarItem[] {
-  return [
-    { text: 'Markdown Examples', link: 'markdown-examples' },
-    { text: 'API Examples', link: 'api-examples' },
-  ]
-}
-function sidebarGithub(): DefaultTheme.SidebarItem[] {
-  return [
-    { text: '基本使用', collapsed: false, items: [{ text: '注册', link: 'basic/register' }] },
-    { text: 'Actions', collapsed: false, items: [{ text: 'Actions', link: 'actions/actions' }] },
-  ]
-}
-function sidebarVitePress(): DefaultTheme.SidebarItem[] {
-  return [
-    {
-      text: 'Deployment process',
-      collapsed: false,
-      items: [
-        { text: '开始', link: 'deployment/01-start' },
-        { text: '配置', link: 'deployment/02-configure' },
-        { text: '部署', link: 'deployment/03-deploy' },
-      ],
-    },
-  ]
-}
-function sidebarCSS(): DefaultTheme.SidebarItem[] {
-  return [
-    {
-      text: 'Grid layout',
-      collapsed: false,
-      items: [{ text: '网格布局概念', link: 'grid-layout/01-concepts' }],
-    },
-    {
-      text: 'Flex box',
-      collapsed: false,
-      items: [{ text: '弹性盒布局概念', link: 'flex-box/01-concepts' }],
-    },
-  ]
-}

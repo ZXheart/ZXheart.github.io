@@ -432,3 +432,13 @@ minmax()函数定义一个长宽范围的闭区间。在设置*显示网格*或�
 <Gap />
 
 ## 网格区域
+<VuePreview />
+```vue preview
+<script lang="ts" setup>
+</script>
+
+<template>
+  <h1>演示： vite-plugin-vue-preview</h1>
+  <span>readonly is special boolean attr</span>
+</template>
+```
