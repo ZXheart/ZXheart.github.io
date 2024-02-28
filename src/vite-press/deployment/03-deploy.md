@@ -94,4 +94,4 @@ jobs:
 
 ## 提交代码
 
-使用git提交代码，该文件上传至github后，github会自动执行`deploy.yml`文件，部署站点到github pages上。然后就可以通过`https://<username>.github.io`访问你的网站了。
+使用git提交代码，该文件上传至github后，github会自动执行`deploy.yml`文件，部署站点到github pages上。然后就可以访问`https://<username>.github.io`查看站点了。

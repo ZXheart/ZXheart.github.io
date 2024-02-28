@@ -11,7 +11,7 @@ export default defineConfig({
   ],
   theme: {
     colors: {
-      'soft-a': '#272843', // 深棕
+      'soft-a': '#222529',
       'soft-b': '#d8d8d8', // 灰色
       'soft-c': '#ffb6c1', // 淡粉
       'soft-d': '#42b883', // 绿色

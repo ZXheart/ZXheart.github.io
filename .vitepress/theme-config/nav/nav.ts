@@ -37,5 +37,14 @@ export function nav(): DefaultTheme.NavItem[] {
       ],
       activeMatch: '/css/',
     },
+    {
+      text: 'Node.js',
+      items: [
+        { text: 'Basic', link: '/nodejs/basic/01-concepts', activeMatch: '/basic/' },
+        { text: 'Express', link: '/nodejs/express/01-concepts', activeMatch: '/express/' },
+        { text: 'Koa', link: '/nodejs/koa/01-concepts', activeMatch: '/koa/' },
+      ],
+      activeMatch: '/nodejs/',
+    },
   ]
 }
