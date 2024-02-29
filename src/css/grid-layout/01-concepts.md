@@ -225,7 +225,7 @@ import Gap from '../components/grid/11-Gap.vue'
 minmax()函数定义一个长宽范围的闭区间。在设置**显式网格**或定义**自动创建的行或列**的大小时，可以为其设置一个最小值和最大值。
 
 
-1. 设置显示网格的大小。缩放浏览器，第二列轨道的宽度会在150px和300px之间变化。
+1. 设置显示网格的大小。缩放浏览器，第二列轨道的宽度会在150px和1fr之间变化。浏览器宽度足够时，第二列与其他两列等宽。反之，第二列最小宽度为150px。
 ``` vue
 <template>
   <div class="
@@ -242,7 +242,7 @@ minmax()函数定义一个长宽范围的闭区间。在设置**显式网格**�
 </template>
 <style>
   .explicit { /* [!code ++:3] */
-    grid-template-columns: 1fr minmax(150px, 300px) 1fr;
+    grid-template-columns: 1fr minmax(150px, 1fr) 1fr;
   }
 </style>
 ```
@@ -414,7 +414,9 @@ minmax()函数定义一个长宽范围的闭区间。在设置**显式网格**�
 
 网格元素间的列间距和行间距可以使用`column-gap`和`row-gap`或者简写`gap`属性来设置。
 
-`gap:10px 20px;` 等价于 `row-gap:10px; column-gap:20px;` 表示行间距为10px，列间距为20px。
+`gap`属性值可以是任何单位，除了`fr`。
+
+ `row-gap:10px; column-gap:20px;`等价于`gap:10px 20px;`表示行间距为10px，列间距为20px。
 ``` vue
 <template>
   <div class="common-wrapper grid grid-cols-3

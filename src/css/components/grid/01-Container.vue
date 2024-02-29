@@ -5,23 +5,16 @@ const { isDark } = useData()
 </script>
 
 <template>
-  <!-- <div class="common-wrapper grid"> -->
-  <div class="common-wrapper grid" :class="[isDark ? 'dark-wrapper' : 'light-wrapper']">
-    <div class="common-item" :class="[isDark ? 'dark-item' : 'light-item']">
-      1
-    </div>
-    <div class="common-item" :class="[isDark ? 'dark-item' : 'light-item']">
-      2
-    </div>
-    <div class="common-item" :class="[isDark ? 'dark-item' : 'light-item']">
-      3
-    </div>
-    <div class="common-item" :class="[isDark ? 'dark-item' : 'light-item']">
-      4
-    </div>
-    <div class="common-item" :class="[isDark ? 'dark-item' : 'light-item']">
-      5
-    </div>
+  <div
+    class="common-wrapper grid"
+    :class="[isDark ? 'dark-wrapper' : 'light-wrapper']"
+  >
+    <view
+      v-for="item in 5" :key="item"
+      class="common-item" :class="[isDark ? 'dark-item' : 'light-item']"
+    >
+      {{ item }}
+    </view>
   </div>
 </template>
 
