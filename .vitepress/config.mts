@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitepress'
 import UnoCSS from 'unocss/vite'
 
-import { nav, sidebarCSS, sidebarEg, sidebarGithub, sidebarJS, sidebarNodejs, sidebarVitePress } from './theme-config'
+import { nav, sidebarCSS, sidebarEg, sidebarGithub, sidebarJS, sidebarNodejs, sidebarVitePress, sidebarVueRouter } from './theme-config'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -28,6 +28,7 @@ export default defineConfig({
       '/vite-press/': { base: '/vite-press/', items: sidebarVitePress() },
       '/css/': { base: '/css/', items: sidebarCSS() },
       '/nodejs/': { base: '/nodejs/', items: sidebarNodejs() },
+      '/vue-router/': { base: '/vue-router/', items: sidebarVueRouter() },
     },
     socialLinks: [{ icon: 'github', link: 'https://github.com/vuejs/vitepress' }],
     footer: {

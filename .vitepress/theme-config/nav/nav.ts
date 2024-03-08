@@ -46,5 +46,10 @@ export function nav(): DefaultTheme.NavItem[] {
       ],
       activeMatch: '/nodejs/',
     },
+    {
+      text: 'Vue Router',
+      link: '/vue-router/essentials/01-getting-started',
+      activeMatch: '/vue-router/',
+    },
   ]
 }
