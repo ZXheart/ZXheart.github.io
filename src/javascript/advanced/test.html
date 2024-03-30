@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const obj = {
+        msg: 'hello',
+      }
+      const proxyObj = new Proxy(obj, {
+        get: function (target, key, receiver) {
+          console.log('被代理对象：', target, '访问的key', key, '被代理对象', receiver)
+          return '666'
+        },
+      })
+      console.log(proxyObj.msg) //  666
+      console.log(proxyObj.xxx) //  666
+      console.log(obj.msg) // hello
+      console.log(obj.xxx) // undefined
+      console.log(proxyObj === obj) // false
+
+      // -----------------------------------------------------
+      const obj1 = {
+        msg: 'hello',
+      }
+      const proxyObj1 = new Proxy(obj1, {
+        get: function (target, key, receiver) {
+          if (key in target) {
+            return target[key]
+          } else {
+            return 'not found'
+          }
+        },
+      })
+      console.log(proxyObj1.msg) //  hello
+      console.log(proxyObj1.xxx) //  not found
+
+      // -----------------------------------------------------
+      const obj2 = {}
+      Object.defineProperty(obj2, 'msg', {
+        enumerable: false,
+        configurable: false,
+        writable: false,
+        value: 'hello',
+      })
+      const proxyObj2 = new Proxy(obj2, {
+        get: function (target, key, receiver) {
+          // return target[key]
+          return 'world'
+        },
+      })
+      // console.log(proxyObj2.msg)
+      // Uncaught TypeError: 'get' on proxy: property 'msg' is a read-only and non-configurable data property
+      // on the proxy target but the proxy did not return its actual value (expected 'hello' but got 'world')
+      console.log(proxyObj2.xxx) // world
+      console.log(obj2.msg) // hello
+
+      // -----------------------------------------------------
+      const obj3 = {
+        get: foo => undefined,
+      }
+      const proxy = new Proxy(obj3, {
+        get: function (target, key, receiver) {
+          return // 这里应该返回 undefined
+        },
+      })
+
+      console.log(proxy.foo) // 抛出错误
+    </script>
+  </body>
+</html>

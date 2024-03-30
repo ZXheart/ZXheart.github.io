@@ -18,7 +18,10 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
     {
       text: 'Advanced',
       collapsed: false,
-      items: [{ text: 'high', link: 'advanced/advanced' }],
+      items: [
+        { text: 'proxy', link: 'advanced/01-proxy' },
+        { text: 'test', link: 'advanced/advanced' },
+      ],
     },
   ]
 }
