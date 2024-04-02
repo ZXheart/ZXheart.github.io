@@ -60,15 +60,108 @@
 
       // -----------------------------------------------------
       const obj3 = {
-        get: foo => undefined,
+        foo: 2,
       }
-      const proxy = new Proxy(obj3, {
+      Object.defineProperty(obj3, 'foo', {
+        configurable: false,
+        get: undefined,
+      })
+      const proxyObj3 = new Proxy(obj3, {
         get: function (target, key, receiver) {
-          return // 这里应该返回 undefined
+          return undefined // 这里应该返回 undefined
         },
       })
 
-      console.log(proxy.foo) // 抛出错误
+      console.log(proxyObj3.foo) // 抛出错误
+
+      // -----------------------------------------------------
+      const obj4 = {}
+      const { proxy, revoke } = Proxy.revocable(obj4, {
+        get: function (target, key, receiver) {
+          return 'world'
+        },
+      })
+      console.log(proxy.msg) // world
+      // revoke()
+      console.log(proxy.msg) // Uncaught TypeError: Cannot perform 'get' on a proxy that has been revoked
+
+      // -----------------------------------------------------
+      const validator = {
+        set(target, key, value) {
+          if (key === 'age') {
+            if (typeof value !== Number && value === NaN) {
+              throw new TypeError('The age is not a number')
+            }
+            if (!Number.isInteger(value)) {
+              throw new TypeError('The age is not an integer')
+            }
+            if (value < 0 || value > 130) {
+              throw new RangeError('The age is invalid')
+            }
+          }
+          return Reflect.set(...arguments)
+        },
+      }
+      const person = new Proxy({}, validator)
+      person.age = 100
+      console.log(person.age) // 100
+      // person.age = 'young' // Uncaught TypeError: The age is not a number
+      // person.age = 140 // Uncaught RangeError: The age is invalid
+
+      // -----------------------------------------------------
+      const obj5 = {
+        _name: 'Tom',
+        getName() {
+          return this._name
+        },
+      }
+      const proxyObj5 = new Proxy(obj5, {
+        get(target, key, receiver) {
+          if (key.startsWith('_')) {
+            throw new Error('private property')
+          }
+          const fn = Reflect.get(...arguments)
+          console.log(fn, typeof value)
+          if (typeof fn === 'function') {
+            return fn.bind(target)
+          }
+        },
+      })
+      // console.log(proxyObj5._name) // Uncaught Error: private property
+      console.log(proxyObj5.getName()) // Tom
+
+      // -----------------------------------------------------
+
+      function extend(sup, base) {
+        console.log(base.prototype)
+        const descriptor = Object.getOwnPropertyDescriptor(base.prototype, 'constructor')
+        console.log(descriptor)
+        base.prototype = Object.create(sup.prototype)
+        const handler = {
+          construct(target, args) {
+            const obj = Object.create(base.prototype)
+            this.apply(target, obj, args)
+            return obj
+          },
+          apply(target, that, args) {
+            sup.apply(that, args)
+            base.apply(that, args)
+          },
+        }
+        const proxy = new Proxy(base, handler)
+        descriptor.value = proxy
+        Object.defineProperty(base.prototype, 'constructor', descriptor)
+        return proxy
+      }
+      const Person = function (name) {
+        this.name = name
+      }
+      const Boy = extend(Person, function (name, age) {
+        this.age = age
+      })
+      Boy.prototype.sex = 'M'
+      const Peter = new Boy('Perter', 13)
+      console.log(Peter.sex) // M
     </script>
   </body>
 </html>

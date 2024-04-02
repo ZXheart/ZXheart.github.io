@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      function extend(sup, base) {
+        console.log(base.prototype)
+        // base原型操作符
+        const descriptor = Object.getOwnPropertyDescriptor(base.prototype, 'constructor')
+        // base原型继承sup原型
+        base.prototype = Object.create(sup.prototype)
+        const handler = {
+          construct(target, args) {
+            const obj = Object.create(base.prototype)
+            this.apply(target, obj, args)
+            return obj
+          },
+          apply(target, that, args) {
+            sup.apply(that, args)
+            base.apply(that, args)
+          },
+        }
+        const proxy = new Proxy(base, handler)
+        descriptor.value = proxy
+        Object.defineProperty(base.prototype, 'constructor', descriptor)
+        return proxy
+      }
+      const Person = function (name) {
+        this.name = name
+      }
+      const Boy = extend(Person, function (name, age) {
+        this.age = age
+      })
+      Boy.prototype.sex = 'M'
+      const Peter = new Boy('Perter', 13)
+      console.log(Peter.sex) // M
+    </script>
+  </body>
+</html>

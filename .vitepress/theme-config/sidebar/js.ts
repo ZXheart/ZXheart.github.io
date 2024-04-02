@@ -20,6 +20,7 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
       collapsed: false,
       items: [
         { text: 'proxy', link: 'advanced/01-proxy' },
+        { text: 'extend-es5', link: 'advanced/02-extend-es5' },
         { text: 'test', link: 'advanced/advanced' },
       ],
     },
