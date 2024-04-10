@@ -10,9 +10,9 @@ export function nav(): DefaultTheme.NavItem[] {
     {
       text: 'Javascript',
       items: [
-        { text: 'Basic', link: '/javascript/basic/grammar-and-types', activeMatch: '/basic/' },
+        { text: 'Basic', link: '/javascript/basic/01-comments', activeMatch: '/basic/' },
         { text: 'Intermediate', link: '/javascript/intermediate/intermediate', activeMatch: '/intermediate/' },
-        { text: 'Advanced', link: '/javascript/advanced/advanced', activeMatch: '/advanced/' },
+        { text: 'Advanced', link: '/javascript/advanced/01-proxy', activeMatch: '/advanced/' },
       ],
       activeMatch: '/javascript/',
     },

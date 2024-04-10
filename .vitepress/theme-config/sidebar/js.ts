@@ -6,8 +6,9 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
       text: 'Basic',
       collapsed: false,
       items: [
-        { text: 'Grammar and types', link: 'basic/grammar-and-types' },
-        { text: 'Object', link: 'basic/object' },
+        { text: '注释', link: 'basic/01-comments' },
+        { text: '逻辑运算符', link: 'basic/02-logical-operators' },
+        { text: '空值合并运算符', link: 'basic/03-nullish-coalescing-operator' },
       ],
     },
     {
@@ -21,7 +22,7 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
       items: [
         { text: 'proxy', link: 'advanced/01-proxy' },
         { text: 'extend-es5', link: 'advanced/02-extend-es5' },
-        { text: 'test', link: 'advanced/advanced' },
+        { text: 'this', link: 'advanced/03-this' },
       ],
     },
   ]
