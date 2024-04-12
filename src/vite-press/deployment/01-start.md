@@ -1,6 +1,6 @@
-# VitePress是什么?
+# VitePress 是什么?
 
-VitePress是一个*静态站点生成器*(SSG - Static Site Generation)
+VitePress 是一个*静态站点生成器*(SSG - Static Site Generation)
 
 ## 前言
 
@@ -17,7 +17,7 @@ VitePress是一个*静态站点生成器*(SSG - Static Site Generation)
 
 ## 创建项目
 
-### 由于是部署到 github pages 上，所以先创建一个 github 仓库再 clone 到本地可以省去不少麻烦
+由于是部署到 github pages 上，所以先创建一个 github 仓库再 clone 到本地可以省去不少麻烦
 
 1. 创建一个 github 仓库，名称必须是`<username>.github.io`，`<username>`是你的 github 用户名。_注意，最好添加一个 README.md,这样可以直接 clone，否则还要自己连接仓库_
 2. 仓库顶栏找到`Settings`，左侧栏找到`Pages`，子标题找到`Build and deployment`，选择`Source`为`GitHub Actions`，点击`Save`，

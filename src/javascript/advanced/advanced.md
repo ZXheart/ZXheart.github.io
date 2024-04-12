@@ -1,3 +1,0 @@
-# Advanced JavaScript
-
-## advanced.md

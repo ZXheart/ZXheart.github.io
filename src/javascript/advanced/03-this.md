@@ -342,7 +342,7 @@ console.log(bar.a) // 2
 
 ## 优先级
 
-- 首先，默认绑定的优先级肯定是最低的
+- 首先，默认绑定的优先级是最低的
 
 - 显示绑定 VS 隐式绑定
 
@@ -387,6 +387,8 @@ console.log(obj1.a) // 2
 console.log(bar.a) // 4
 ```
 
+所以，`new`绑定的优先级高于隐式绑定
+
 - `new`绑定 VS 显式绑定
 
 ::: tip
@@ -414,10 +416,10 @@ console.log(obj1.a) // 2
 console.log(baz.a) // 3 然而，结果是3，说明new绑定优先级高于硬绑定
 ```
 
-然而真相是，`bar`是硬绑定到`obj1`的，但是`new bar(3)`并没有像期待的那样将`obj1.a`变为 3。反而，硬绑定的`bar`函数返回了一个新的对象，说明
-`new`被实施了，而且`new`的优先级高于硬绑定。
+结果出乎预料。`bar`是硬绑定到`obj1`的，但是`new bar(3)`并没有像期待的那样将`obj1.a`变为 3。反而，硬绑定的`bar`函数返回了一个新的对象，
+说明`new`被实施了，而且`new`的优先级高于硬绑定。
 
-回顾之前我们`山寨`过一个`bind`函数：
+回顾之前我们*山寨*过一个`bind`函数：
 
 ```javascript
 function bind(fn, obj) {
@@ -427,9 +429,9 @@ function bind(fn, obj) {
 }
 ```
 
-我使用`山寨`的`bind()`函数也执行了同样的代码，发现`new`操作符无法将绑定到 `obj1` 的硬绑定覆盖
+我使用*山寨*的`bind()`函数执行了同样的代码，结果`new`操作符无法将绑定到 `obj1` 的硬绑定覆盖
 
-```javascript {16,18-23}
+```javascript {17,19-24}
 Function.prototype.myBind = function (fn, obj) {
   return function (...args) {
     return fn.apply(obj, args)
@@ -440,42 +442,104 @@ function foo(args) {
 }
 
 const obj1 = {}
+
 const bar = foo.myBind(foo, obj1)
 bar(2)
 console.log(obj1.a) // 2
 
 const baz = new bar(3)
-// 上一行代码相当是foo.apply(obj1,[3])，所以这里obj1.a = 3
+// new bar(3)等同于foo.apply(obj1,[3])，所以这里obj1.a = 3
 console.log(obj1.a) //3
 /**
- * 同时，myBind()返回的匿名函数就是bar函数。bar函数也是通过new调用的，意思是bar()
- * 内部会创建一个空对象，如果bar()显式的返回了一个对象，那baz就等同于该返回对象，
- * 否则就是创建的空对象。那么baz的值就取决于 fn.apply(obj, args) 的返回值；
- * 而作为参数传入的foo函数没有返回值（undefined）。所以baz是一个空对象
+ * 同时，myBind()返回的匿名函数赋值给bar。bar函数通过new调用，那么bar函数执行时
+ * 内部会创建一个空对象。如若bar()显式的返回了一个对象，那baz就等同于该返回对象，
+ * 否则就是创建的空对象。这样baz的值就取决于 fn.apply(obj, args) 的返回值；
+ * 而作为参数传入的foo函数没有返回值（默认undefined）。所以baz是一个空对象
  */
 console.log(baz, baz.a) //{} undefined
 ```
 
-这是因为 ES5 的内建`Function.prototype.bind()`更加精妙，实际上十分精妙。这个是 MDN 提供的（稍稍格式化）polyfill（低版本兼容填补工具）：
+这是因为 ES5 的内建`Function.prototype.bind()`更加精妙，实际上十分精妙。这个是 MDN 提供的（稍稍格式化）polyfill：
 
 ```javascript
 if (!Function.prototype.bind) {
   Function.prototype.bind = function (oThis) {
+    //oThis是第一个参数，也就是绑定的对象
     if (typeof this !== 'function') {
       throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable')
     }
+    // arguments是包括oThis的类数组对象。这里将oThis去掉，并转为数组
     const aArgs = Array.prototype.slice.call(arguments, 1)
+
+    // 保存一份被绑定函数（原函数）的引用；
+    // 目的是为了保持原型链的完整性（就是返回的硬绑定函数如果是通过new调用，new出的实例.__proto__应该指向this）
     const fToBind = this
+
+    // 工具函数，用于链接bound函数和原函数的原型链
     const fNOP = function () {}
+
+    // 返回的硬绑定函数
     const fBound = function () {
       return fToBind.apply(
+        // 第一个参数：这里的this是fBound的调用者，
+        // 如果是通过new调用，this就是new出的实例。最终apply绑定的就是new出的实例；（前边表现和预期不同的原因就是因为这句代码）
+        // 如果是默认调用，this就是window。最终apply绑定的就是oThis
+        // 如果是对象调用，this就是对象。最终apply绑定的就是oThis
+        // 如果是显示调用，this就是指定的对象。最终apply绑定的就是oThis
+
+        // 我不懂这里为什么要 && oThis； fuck!!!
         this instanceof fNOP && oThis ? this : oThis,
         aArgs.concat(Array.prototype.slice.call(arguments))
       )
     }
+    // 目的：fBound.prototype.__proto__ === fToBind.prototype
     fNOP.prototype = this.prototype
     fBound.prototype = new fNOP()
     return fBound
   }
 }
 ```
+
+我用 ES5 以后的语法重构了一下，原版对我来说太难懂了
+
+```javascript
+Function.prototype.myBind = function (...outArgs) {
+  if (typeof this !== 'function') {
+    throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable')
+  }
+  const aArgs = outArgs.slice(1)
+  const fToBind = this
+  const fBound = function (...inArgs) {
+    return fToBind.apply(this instanceof fBound && outArgs[0] ? this : outArgs[0], aArgs.concat(inArgs))
+  }
+  fBound.prototype = Object.create(this.prototype)
+  return fBound
+}
+```
+
+::: details
+为什么`new`可以覆盖`硬绑定`这件事很有用
+
+这个行为的主要原因是，创建一个实质（基本？）上忽略`this`的`硬绑定`而预先设置一部分或所有的参数的函数（这个函数可以与`new`一起是用来构建对象）。
+`bind()`的一个能力是，任何在第一个`this`绑定参数之后被传入的参数，默认的作为当前函数的标准参数
+（技术上这成为“局部应用（partial application）”，是一种“柯里化（currying）”）
+
+The primary reason for this behavior is to create a function (that can be used with `new` for constructing objects)
+that essentially ignores the `this` _hard binding_ but which presets some or all of the function's arguments. One of
+the capabilities of `bind(..)` is that any arguments passed after the first `this` binding argument are defaulted as
+standard arguments to the underlying function (technically called "partial application", which is a subset of "currying").
+
+**卧槽，我特码是一个字也看不懂**
+
+```javascript
+function foo(p1, p2) {
+  this.val = p1 + p2
+}
+// 这里使用`null`是因为我们不关心硬绑定的`this`（反正会被`new`覆盖），只关心参数
+const bar = foo.bind(null, 'p1')
+const baz = new bar('p2')
+console.log(baz.val) // p1p2
+// 抄完了，这个`Details`里完全不知道要干嘛
+```
+
+:::
