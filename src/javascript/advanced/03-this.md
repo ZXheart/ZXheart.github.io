@@ -529,7 +529,7 @@ that essentially ignores the `this` _hard binding_ but which presets some or all
 the capabilities of `bind(..)` is that any arguments passed after the first `this` binding argument are defaulted as
 standard arguments to the underlying function (technically called "partial application", which is a subset of "currying").
 
-**卧槽，我特码是一个字也看不懂**
+**卧槽，TMD 一个字也看不懂**
 
 ```javascript
 function foo(p1, p2) {
@@ -539,7 +539,129 @@ function foo(p1, p2) {
 const bar = foo.bind(null, 'p1')
 const baz = new bar('p2')
 console.log(baz.val) // p1p2
-// 抄完了，这个`Details`里完全不知道要干嘛
+// 抄完了，完全不知道这个`Details`在表达什么
 ```
 
 :::
+:::details
+而且，测试的时候，如果添加了`&& oThis`，`myBind`和`Function.prototype.bind`的行为就会不一样
+
+正如代码所示，似乎去掉`&& oThis`才合理。**你妹的，真让人恼火！**
+
+```javascript
+function foo() {
+  console.log(this.a)
+}
+var a = 'global'
+
+const bar = foo.myBind(null, 3, 4, 5)
+bar() // global
+const barRes = new bar() // global
+
+const baz = foo.bind(null, 3, 4, 5)
+baz() // global
+const res = new baz() // undefined
+```
+
+:::
+
+## 判定 this
+
+现在，可以按照优先顺序总结一下从函数调用的调用点来判断`this`的规则了。
+按照这个顺序来提问，然后在第一个规则适合的地方停下：
+
+1. 函数是通过`new`调用的吗？如果是，`this`就是新创建的对象。
+2. 函数是通过`call`或`apply`被调用，甚至是隐藏在`bind`硬绑定中吗？如果是，`this`就是那个被明确指定的对象。
+3. 函数是通过环境对象被调用的吗？如果是，`this`就是那个环境对象。
+4. 否则，使用默认绑定。如果在`strict mode`下，就是`undefined`，否则就是`globalThis`对象。
+
+## 绑定特例
+
+总有一些“规则”之外的情况。
+
+### 被忽略的 this
+
+如果你传入`null`或`undefined`作为`call`、`apply`、`bind`的`this`绑定参数，那么这些值会被忽略掉，取而代之的是**默认调用规则**。
+
+```javascript
+function foo() {
+  console.log(this.a)
+}
+var a = 2
+foo.call(null) // 2
+```
+
+什么情况你会向`this`绑定故意传递像`null`这样的值？
+
+一个常见的做法是，使用`apply(..)`来“展开”一个数组，并当作参数传入一个函数。类似的，`bind(..)`可以对参数进行柯里化（curry）。
+
+```javascript
+function foo(a, b) {
+  console.log(`a: ${a}, b: ${b}`)
+}
+// 1、 函数接收参数列表，但现在我们有一个数组
+// 将数组展开，作为参数传入foo
+foo.apply(null, [2, 3]) // a: 2, b: 3
+
+// 2、使用`bind(..)`进行柯里化
+const bar = foo.bind(null, 2)
+bar(3) // a: 2, b: 3
+```
+
+这两种用法都要求第一个参数是`this`绑定。如果目标函数不关心`this`，就需要一个占位值，`null`看起来是一个合理的选择。
+
+:::tip
+ES6 的扩展运算符（`...`）可以替代`apply(..)`的展开功能，而且更加简洁易懂。比如`foo(...[2, 3])`等同于`foo(2, 3)`。
+如果`this`绑定没必要，可以在语法上回避它。但是柯里化在 ES6 中并没有好的替代品。
+
+:::
+::: warning
+
+可是，在你不关心`this`绑定而一直使用`null`的时候，有些潜在“危险”。如果你这样调用一些函数（比如，第三方包），而且那些函数确实使用了`this`，
+那么你可能会意外的将全局对象（`globalThis`）绑定到那个函数上。
+:::
+
+#### 更安全的 this
+
+为了`this`传递一个特殊创建好的对象，这个对象保证不会对程序产生副作用。从网络学（或军事）上借用一个词，我们可以建立
+一个“DMZ-demilitarized zone”（非军事区）对象——一个完全为空，没有委托的对象
+
+如果我们为了忽略自己认为不用关心的`this`绑定，而总是传递一个 DMZ 对象，那么我买就可以确定任何对`this`的隐藏或意外地使用将会被限制在这个
+空对象中，也就是说这个对象将`globalThis`对象和副作用隔离开。
+
+本书推荐这个对象的名字是`ø`（空集合的数学符号的小写）。当然只是推荐
+
+无论叫什么，创建**完全为空的对象**的最简单的方法就是使用`Object.create(null)`。`Object.create(null)`和`{}`很像，但是没有
+指向`Object.prototype`的委托链接，所以他比`{}`“空的更彻底”
+
+```javascript
+function foo(a, b) {
+  console.log(`a: ${a}, b: ${b}`)
+}
+const ø = Object.create(null)
+// 展开数组
+foo.apply(ø, [2, 3]) // a: 2, b: 3
+// 使用bind进行柯里化
+const bar = foo.bind(ø, 2)
+bar(3) // a: 2, b: 3
+```
+
+### 间接引用
+
+另一个要注意的是，你可以（有意或无意地！）创建对函数的“间接引用（indirect reference）”，在那样的情况下，当那个函数被调用时，
+**默认绑定规则**也会适用。
+
+一个最常见的间接引用产生方式是通过赋值：
+
+```javascript
+function foo() {
+  console.log(this.a)
+}
+var a = 2
+var o = { a: 3, foo: foo }
+var p = { a: 4 }
+o.foo() // 3
+// 新东西哈，长见识了
+// 前边的赋值操作，结果
+;(p.foo = o.foo)() // 2
+```
