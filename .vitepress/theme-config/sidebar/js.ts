@@ -52,6 +52,7 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
         { text: 'extend-es5', link: 'advanced/02-extend-es5' },
         { text: 'this', link: 'advanced/03-this' },
         { text: 'copy', link: 'advanced/04-copy' },
+        { text: 'object', link: 'advanced/05-object' },
       ],
     },
   ]
