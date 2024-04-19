@@ -39,7 +39,7 @@ slice(begin, end)
 
 :::tip
 
-- `slice()`是一个复制方法。不改变`this`，而是返回一个[浅拷贝](/javascript/advanced/04-copy#shallow-copy)，其中包含了原数组的一部分相同元素。
+- `slice()`是一个复制方法。不改变`this`，而是返回一个[浅拷贝](/javascript/advanced/03-copy#shallow-copy)，其中包含了原数组的一部分相同元素。
 - `slice()`会保留[空槽](/javascript/basic/06-sparse-arrays)。如果被切片的部分是[稀疏的](/javascript/basic/06-sparse-arrays)，则返回的数组也是稀疏的。
 - `slice()`方法是通用的。它只要求`this`上有`length`属性和整数键属性。比如：
 

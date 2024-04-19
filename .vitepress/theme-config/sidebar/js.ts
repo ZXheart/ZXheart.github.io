@@ -50,9 +50,26 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
       items: [
         { text: 'proxy', link: 'advanced/01-proxy' },
         { text: 'extend-es5', link: 'advanced/02-extend-es5' },
-        { text: 'this', link: 'advanced/03-this' },
-        { text: 'copy', link: 'advanced/04-copy' },
-        { text: 'object', link: 'advanced/05-object' },
+        { text: 'copy', link: 'advanced/03-copy' },
+      ],
+    },
+    {
+      text: 'Book',
+      collapsed: true,
+      items: [
+        {
+          text: "You Don't Know JS",
+          collapsed: true,
+          items: [
+            { text: 'this', link: 'book/you-dont-know-js/01-this' },
+            { text: 'object', link: 'book/you-dont-know-js/02-object' },
+          ],
+        },
+        {
+          text: 'some book',
+          collapsed: true,
+          items: [{ text: 'this', link: 'book/you-dont-know-js/03-object' }],
+        },
       ],
     },
   ]
