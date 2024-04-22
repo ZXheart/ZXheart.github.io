@@ -703,7 +703,7 @@ console.log('1' in arr) // true
 
 #### 枚举（enumeration）
 
-[先前](02-object#可枚举性-enumerable)，在学习`enumerable`属性描述符性质时，简单地解释了“可枚举型（enumerability）”的含义。
+[先前](02-object#可枚举性-enumerable)，在学习`enumerable`属性描述符性质时，简单地解释了“可枚举性（enumerability）”的含义。
 
 ```javascript
 var myObj = {}
