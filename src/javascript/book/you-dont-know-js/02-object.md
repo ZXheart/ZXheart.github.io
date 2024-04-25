@@ -763,7 +763,7 @@ Object.getOwnPropertyNames(myObj) // ['a', 'b']
 
 ## 迭代（iteration）
 
-`for..in`循环迭代一个对象上（包括它的`[[Prototype]]`链）所有的可迭代属性。但如果你想要迭代值呢？
+`for..in`循环迭代一个对象上（包括它的`[[Prototype]]`链）**所有的可迭代属性**。但如果你想要迭代值呢？
 
 在数字索引的数组中，典型的迭代所有值得办法时使用标准的`for`循环：
 
@@ -776,8 +776,100 @@ for (let i = 0; i < arr.length; i++) {
 
 但是这并没有迭代所有的值，而是迭代了所有的下标，然后由你使用索引来引用值，比如`arr[i]`。
 
+如果使用`for..in`循环在一个对象上进行迭代，也只能间接得到值，因为他实际上**仅仅迭代对象的所有可枚举属性**，然后手动的去访问属性来取得值。
+
 :::warning
 与以有序数字的方式（`for`循环或其他迭代器）迭代数组的下标比较起来，迭代对象属性的顺序是**不确定**的，而且可能会因 JS 引擎的不同而不同。对于跨
 平台环境保持一致的问题，**不要依赖**观察到的顺序，因为这个顺序是不可靠的。
 
 :::
+如果想要直接迭代值，而非数组下标/对象属性，ES6 加入了一个新的循环语法：`for..of`，用来迭代数组（和对象，如果这个对象有定义的迭代器）：
+
+```javascript
+var arr = [1, 2, 3]
+for (let v of arr) {
+  console.log(v)
+} // 1 2 3
+```
+
+`for..of`循环要求被迭代的*东西*提供一个迭代器对象（从一个在语言规范中叫做`@@iterator`的默认内部函数那里得到），每次循环都会调用一次这个
+迭代器对象的`next()`方法，循环迭代的内容就是这些连续的返回值。
+
+数组拥有内建的`@@iterator`，所以正如上边代码，`for..of`对于它们很易用。但是让我们使用内建的`@@iterator`来手动迭代一个数组：
+
+```javascript
+var arr = [1, 2, 3]
+const iteratorObj = arr[Symbol.iterator]()
+
+console.log(iteratorObj.next()) // { value: 1, done: false }
+console.log(iteratorObj.next()) // { value: 2, done: false }
+console.log(iteratorObj.next()) // { value: 3, done: false }
+console.log(iteratorObj.next()) // { value: undefined, done: true }
+```
+
+:::warning
+我们使用一个 ES6 的`Symbol`:`Symbol.iterator`来取得对象的`@@iterator` _内部属性_。另外，尽管这个名称有这样的暗示，但`@@iterator`本
+身**不是迭代器对象**，而是一个返回迭代器对象的**方法**！
+
+:::
+正如上边代码所示，迭代器的`next()`调用的返回值是一个`{value: .., done: ..}`形式的对象，其中`value`是当前迭代的值，而`done`是一个`boolean`，
+表示是否还有更多内容可以迭代。
+
+注意` value: 3`和`done: false`一起返回，猛地一看会有些奇怪。你不得不第四次调用`next()`（在前一个代码段的`for..of`循环会自动这样做）来
+得到`done: true`，以使自己知道迭代已经完成。这个怪异之处的原因超出了我们这里讨论范围，但是它源自于 ES6 生成器（generator）函数的语义。
+（coderwhy 讲过，依稀记得`yield`和`*`，生成器函数返回一个拥有`next()`的生成器，遇到`yield`暂停，再次`next()`直到函数结束）
+
+虽然数组可以在`for..of`循环中自动迭代，但普通的对象**没有内建的`@@iterator`**。这种故意省略的原因要比我们将在这里解释的更复杂，但一般来说，
+为了未来的对象类型，最好不要加入那些可能最终被证明是麻烦的实现。
+
+但是*可以*为你想要的迭代的对象定义你自己的默认`@@iterator`。比如：
+
+```javascript
+const obj = { a: 1, b: 2 }
+
+Object.defineProperty(obj, Symbol.iterator, {
+  enumerable: false,
+  writable: false,
+  configurable: true,
+  value() {
+    let idx = 0
+    const keys = Object.keys(this)
+    return {
+      next: () => ({ value: this[keys[idx++]], done: idx > keys.length }),
+    }
+  },
+})
+const it = obj[Symbol.iterator]()
+console.log(it.next()) // { value: 1, done: false }
+console.log(it.next()) // { value: 2, done: false }
+console.log(it.next()) // { value: undefined, done: true }
+
+for (const v of obj) {
+  console.log(v)
+} // 1 2
+```
+
+:::warning
+我们使用了`Object.defineProperty(..)`来定义`@@iterator`（很大程度上因为我们可以将它指定为不可枚举的），但是通过将`Symbol`作为一个*计
+算属性名*，我们也可以直接声明它，比如`var obj = {a: 1, b: 2, [Symbol.iterator]() { .. }}`。
+:::
+
+每次`for..of`循环在`obj`的迭代器对象上调用`next()`时，迭代器内部的指针将会向前移动并返回对象属性列表的下一个值。
+
+## 总结
+
+JS 中对象拥有字面量（`var a = {..}`）和构造形式（`var a = new Array(..)`）。字面形式几乎是首选，但某些情况，构造形式提供更多的构建选项。
+
+许多人声称“JS 中的一切都是对象”，这是不对的。对象有子类型，包括`function`，还可以被行为特化，比如`[object Array]`作为内部的标签表示子类型数组。
+
+对象是键/值对的集合。通过`.propName`或`['propName']`语法，值可以作为属性访问。不管属性什么时候被访问，引擎实际上会调用默认的`[[Get]]`
+操作（在设置时调用`[[Put]]`操作），它不仅直接在对象上查找属性，在没有找到是还会遍历`[[Prototype]]`链。
+
+属性有一些可以通过属性描述符控制的特定性质，比如`writable`和`configurable`。另外，对象拥有它的不可变性（他们的属性也有），可以通过
+`Object.preventExtensions(..)`，`Object.seal(..)`和`Object.freeze(..)`来控制几种不同等级的不可变性。
+
+属性不必非要包含值，它们也可以是带有 getter/setter 的“访问器属性”。它们也可以是可枚举或不可枚举的，这控制它们是否会在`for..in`这样的循环
+迭代中出现。
+
+你也可以使用 ES6 的`for..of`语法，在数据结构（数组，对象等）中迭代**值**，它寻找一个内建或自定义的`@@iterator`对象，这个对象由一个`next()`
+方法组成，通过这个`next()`方法每次迭代一个数据。
