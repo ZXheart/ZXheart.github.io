@@ -4,6 +4,7 @@
 
   // Disable the default formatter, use eslint instead
   "prettier.enable": true,
+  "prettier.printWidth": 140,
   "editor.formatOnSave": true,
 
   // Auto fix

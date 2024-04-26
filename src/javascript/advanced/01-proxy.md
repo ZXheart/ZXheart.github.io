@@ -1,6 +1,6 @@
 # Proxy
 
-Proxy 对象用于创建一个对象的代理，，从而实现基本操作的拦截和自定义（如属性查找、赋值、枚举、函数调用等）。
+Proxy 对象用于创建一个对象的代理，从而实现基本操作的拦截和自定义（如属性查找、赋值、枚举、函数调用等）。
 
 ## 语法
 
@@ -99,9 +99,10 @@ console.log(obj2.msg) // hello
 ```
 
 - 如果要访问的目标属性没有配置访问方法，即 get 方法是 undefined 的，则返回值必须为 undefined。(这个 MDN 翻译后描述，我测了半天都没报错)
-- The value reported for a property must be undefined if the corresponding target object property is a non-configurable
-  own accessor property that has undefined as its [[Get]] attribute. (这个是英文原文，少翻译了`non-configurable`)
-- 正确的描述应该是：如果目标对象的属性是一个不可配置的自有访问器属性，且其 `get` 方法是 `undefined`，则代理对象的 `get` 方法必须返回 `undefined`。
+- The value reported for a property must be undefined if the corresponding target object property is a non-configurable own accessor
+  property that has undefined as its [[Get]] attribute. (这个是英文原文，少翻译了`non-configurable`)
+- 正确的描述应该是：如果目标对象的属性是一个不可配置的自有访问器属性，且其 `get` 方法是 `undefined`，则代理对象的 `get` 方法必须返回
+  `undefined`。
 
 ```js
 const obj3 = {
@@ -128,8 +129,8 @@ Proxy.revocable()方法返回一个对象，结构为 `{proxy, revoke}`，其中
 - `proxy`： 代表新生成的代理对象本身，和 `new Proxy(target, handler)`创建的代理对象一样，只是它可以被销毁。
 - `revoke`： 一个函数，调用时不需要加任何参数，调用后会撤销 Proxy 实例，此后再访问 Proxy 实例会抛出错误。
 
-一旦某个代理对象被撤销，它将变得几乎完全不可调用，在它身上执行任何可代理操作都会抛出错误。一旦被撤销，代理对象便不可能恢复到原来的状态，同时和它
-关联的目标对象以及处理器对象都有可能被垃圾回收掉。再次调用 revoke()方法不会有任何效果，但也不会报错。
+一旦某个代理对象被撤销，它将变得几乎完全不可调用，在它身上执行任何可代理操作都会抛出错误。一旦被撤销，代理对象便不可能恢复到原来的状态，同时
+和它关联的目标对象以及处理器对象都有可能被垃圾回收掉。再次调用 revoke()方法不会有任何效果，但也不会报错。
 
 该方法常用于完全封闭对目标对象的访问
 
