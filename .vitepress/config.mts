@@ -1,5 +1,7 @@
-import { defineConfig } from 'vitepress'
 import UnoCSS from 'unocss/vite'
+import { defineConfig } from 'vitepress'
+
+import cjk_breaks from 'markdown-it-cjk-breaks'
 
 import { nav, sidebarCSS, sidebarEg, sidebarGithub, sidebarJS, sidebarNodejs, sidebarVitePress, sidebarVueRouter } from './theme-config'
 
@@ -12,6 +14,7 @@ export default defineConfig({
   lastUpdated: true,
   markdown: {
     lineNumbers: true,
+    config: md => md.use(cjk_breaks),
   },
   vite: {
     plugins: [UnoCSS()],
@@ -32,8 +35,7 @@ export default defineConfig({
     },
     socialLinks: [{ icon: 'github', link: 'https://github.com/vuejs/vitepress' }],
     footer: {
-      message:
-        'Released under the <a href="https://github.com/ZXheart/ZXheart.github.io?tab=MIT-1-ov-file"> MIT License.</a>',
+      message: 'Released under the <a href="https://github.com/ZXheart/ZXheart.github.io?tab=MIT-1-ov-file"> MIT License.</a>',
       copyright: 'Copyright © 2023-present <a href="https://github.com/ZXheart/ZXheart.github.io">julien</a>',
     },
     outline: { level: 'deep' },

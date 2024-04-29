@@ -24,5 +24,8 @@
     "vite": "^5.2.8",
     "vitepress": "1.1.0",
     "vue": "^3.4.21"
+  },
+  "dependencies": {
+    "markdown-it-cjk-breaks": "^2.0.0"
   }
 }
