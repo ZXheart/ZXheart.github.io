@@ -64,6 +64,7 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
             { text: 'this', link: 'book/you-dont-know-js/01-this' },
             { text: 'object', link: 'book/you-dont-know-js/02-object' },
             { text: `mixing 'class' object`, link: 'book/you-dont-know-js/03-mixing-class-objects' },
+            { text: `prototypes`, link: 'book/you-dont-know-js/04-prototypes' },
           ],
         },
         {
