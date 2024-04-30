@@ -95,7 +95,7 @@ JS 拥有*一些*像类的语法元素（比如`new`和`instanceof`）有一阵�
 建筑物与蓝图间的关系是间接的。你可以检视蓝图来了解建筑物是如何构造的，但对于直接考察建筑物的每一部分，仅有蓝图是不够的。如果你想打
 开一扇门，你不得不走进建筑物本身 —— 蓝图仅仅是为了用来*表示*门的位置而在纸上画的线条。
 
-一个类就是一个蓝图。为了实际得到一个对象并与之互动，我们必须从类中建造（也就是实例化）某样东西。这种“建造”的最终结果是一个对像，通
+一个类就是一个蓝图。为了实际得到一个对象并与之互动，我们必须从类中建造（也就是实例化）某样东西。这种“建造”的最终结果是一个对象，通
 常称为一个 “实例”，我们可以按需要直接调用它的方法，访问它的公共数据属性。
 
 **这个对象是所有在类中被描述的特性的*拷贝*。**
@@ -103,7 +103,7 @@ JS 拥有*一些*像类的语法元素（比如`new`和`instanceof`）有一阵�
 你不太可能会指望走进一栋建筑之后发现，一份用于规划这栋建筑物的蓝图被裱起来挂在墙上，虽然蓝图可能在办公室的公共记录的文件中。相似地
 ，你一般不会使用对象实例来直接访问和操作类，但是对于判定对象实例来自于*哪个类*至少是可能的。
 
-与考虑对象实例与它源自的类的任何间接关系相比，考虑类和对象实例的直接关系更有用。**一个类通过拷贝操作被实例化为对象的形式。**
+与考虑对象实例与它源自的类的任何间接关系相比，考虑类和对象实例的直接关系更有用。**一个类通过拷贝操作实例化为对象形式。**
 
 ### 构造器（constructor）
 
@@ -218,9 +218,11 @@ class SpeedBoat inherits Vehicle{
 
 如上例我们看到这种行为发生了两次：`drive()`在`Vehicle`和`Car`中定义，而`ignition()`在`Vehicle`和`SpeedBoat`中定义。
 
-:::warning 另一个传统面向类语言通过`super`给你的能力，是从子类的构造器中直接访问父类构造器。这很大程度上是对的，因为对真正的类来说
-，构造器属于这个类。然而在 JS 中，这是相反的 —— 实际上认为“类”属于构造器（`Foo.prototype...`类型引用）更恰当。因为在 JS 中，父子关
-系仅存在于它们各自的构造器的两个`.prototype`对象间，构造器本身不直接关联，而且没有简单的方法从一个中相对引用另一个。
+:::warning
+
+另一个传统面向类语言通过`super`给你的能力，是从子类的构造器中直接访问父类构造器。这很大程度上是对的，因为对真正的类来说，构造器属
+于这个类。然而在 JS 中，这是相反的 —— 实际上认为“类”属于构造器（`Foo.prototype...`类型引用）更恰当。因为在 JS 中，父子关系仅存在于
+它们各自的构造器的两个`.prototype`对象间，构造器本身不直接关联，而且没有简单的方法从一个中相对引用另一个。
 
 :::
 
@@ -248,4 +250,280 @@ class SpeedBoat inherits Vehicle{
 了`drive()`的方法，在子类的`drive()`引用将会解析为哪个版本？你会总是不得不手动指明哪个父类的`drive()`是你想要的，从而失去一些堕胎
 继承的优雅之处吗？
 
-还有另外一个所谓的“钻石问题”：
+还有另外一个所谓的“钻石问题”：子类“D”继承自两个父类（“B”和“C”），它们两个又继承自共通的父类“A”。如果“A”提供了方法`drive()`，而“B”
+和“C”都覆盖（多态地）了这个方法，那么当“D”引用`drive()`时，它应当使用哪个版本呢？（`B:drive()`还是`C:drive()`）
+
+时间会比我们这样窥豹一斑能看到的复杂得多。我们在这里将它们提出来，只是便于我们可以将它和 JS 机制的工作方式比较。
+
+JS 更简单：它不为“多重继承”提供原生机制。许多人认为这是件好事，因为省去的复杂性要比“减少”的功能多得多。但是这并不能阻挡开发者们用
+各种方法模拟它。
+
+## 混合（mixin）
+
+当你“继承”或是“实例化”时，JS 的对象机制不会*自动地*执行拷贝行为。很简单，在 JS 中没有“类”可以拿来实例化，只有对象，而且对象也不会
+被拷贝到另一个对象中，而是被*链接在一起*。
+
+因为在其他语言中观察到的类的行为意味着拷贝，让我们看看 JS 开发者们如何在 JS 中**模拟**这种*缺失*的类的拷贝行为：mixin(混合)。我们
+会看到两种“mixin”：**明确的（explicit）**和**隐含的（implicit）**。
+
+## 明确的 mixin（explicit mixins）
+
+让我们再次回顾前面的`Vehicle`和`Car`的例子。因为 JS 不会自动地将行为从`Vehicle`拷贝到`Car`，我们可以建造一个工具来手动拷贝。这样的
+工具经常被许多库/框架称为`extend(..)`，但为了便于说明，我们且称之为`mixin(..)`。
+
+```javascript
+// 大幅简化的`mixin(..)示例`：
+function mixin(sourceObj, targetObj) {
+  for (let key in sourceObj) {
+    // 仅拷贝非既存内容
+    if (!(key in targetObj)) {
+      targetObj[key] = sourceObj[key]
+    }
+  }
+  return targetObj
+}
+
+const Vehicle = {
+  engines: 1,
+  ignition: function () {
+    console.log('Turning on my engine.')
+  },
+  drive: function () {
+    this.ignition()
+    console.log('Steering and moving forward!')
+  },
+}
+
+const Car = mixin(Vehicle, {
+  wheels: 4,
+  drive: function () {
+    Vehicle.drive.call(this)
+    console.log('Rolling on all ', this.wheels, ' wheels!')
+  },
+})
+```
+
+::: warning
+
+重要的细节：我们谈论的不再是类，因为 JS 中没有类。`Vehicle`和`Car`分别只是我们实施拷贝的源和目标对象。
+
+:::
+
+`Car`现在拥有了一份从`Vehicle`得到的属性和函数的拷贝。技术上讲，函数实际上没有被复制，而是指向函数的*引用*被复制了。所以，`Car`现
+在有一个称为`ignition`的属性，它是一个`ignition()`函数引用的拷贝；而且它还有一个称为`engines`的属性，持有从`Vehicle`拷贝来的
+值`1`。
+
+`Car`*已经*有了`drive`属性（函数），所以这个属性引用没有覆盖。
+
+#### 重温“多态（polymorphism）”
+
+我们来考察一下这个语句：`Vehicle.drive.call(this)`。我将称之为“显式假想多态（explicit pseudo-polymorphism）”。回想一下，我们前一段
+假想代码的这一行是我们称之为“相对多态（relative polymorphism）”的`inherited:drive()`。
+
+JS 没有能力实现相对多态（ES6 之前）。所以，**因为`Car`和`Vehicle`都有一个名为`drive()`的函数**，为了在它们之间区别调用，我们必须使
+用绝对（不是相对）引用。我们明确地用名称指出`Vehicle`对象，然后在它上面调用`drive()`。
+
+但如果我们说`Vehicle.drive()`，那么这个函数调用的`this`绑定将会是`Vehicle`对象，而不是`Car`对象，那不是我们想要的。所以，我们使
+用`call(this)`来保证`drive()`在`Car`对象的环境中被执行。
+
+::: warning
+
+如果`Car.drive()`的函数名称标识符没有与`Vehicle.drive()`的重叠（也就是“遮蔽（shadowed）”），我们不会有机会演示“方法多态（method
+polymorphism）”。因为那样的话，一个指向`Vehicle.drive()`的引用会被`mixin(..)`调用拷贝，而我们可以使用`this.drive()`直接访问它。被
+选用的标识符重叠**遮蔽**就是为什么我们不得不使用更复杂的*显式假想多态（explicit pseudo-polymorphism）*的原因。
+
+:::
+
+在拥有相对多态的面向类的语言中，`Car`和`Vehicle`之间的连接在类定义的顶端被建立一次，那里是维护这种关系的唯一场所。
+
+但由于 JS 的特殊性，显式假想多态（因为遮蔽！）**在每一个你需要这种（假想）堕胎引用的函数中**建立了一种脆弱的手动/显式链接。这可能
+会显著地增加维护成本。而且，虽然显式假想多态可以模拟“多重继承”的行为，但这只会增加复杂性和代码脆弱性。
+
+这种方法的结果通常是更加复杂，更难读懂，*而且*更难维护的代码。**应当尽可能地避免使用显式假想多态**，因为在大部分层面上它的代价要高
+于利益。
+
+#### 混合拷贝（mixing copies）
+
+回一下上边的`mixin(..)`工具：
+
+```javascript
+// 大幅简化的`mixin()`示例：
+function mixin(sourceObj, targetObj) {
+  for (let key in sourceObj) {
+    if (!(key in targetObj)) {
+      targetObj[key] = sourceObj[key]
+    }
+  }
+  return targetObj
+}
+```
+
+现在，我们考察一下`mixin(..)`如何工作。它迭代`sourceObj`（在我们的例子中是`Vehicle`）的所有属性，如果在`targetObj`（在我们的例子中
+是`Car`）中没有名称与之匹配的属性，它就进行拷贝。因为我们是在初始对象存在的情况下进行拷贝，所以我们要小心不要将目标属性覆盖掉。
+
+如果在指明`Car`的具体内容之前，我们先进行拷贝，那么我们就可以省略对`targetObj`检查，但是这样做有些笨拙且低效，所以通常不优先选用：
+
+```javascript
+// 另一种mixin，对覆盖不太“安全”
+function mixin(sourceObj, targetObj) {
+  for (let key in sourceObj) {
+    targetObj[key] = sourceObj[key]
+  }
+  return targetObj
+}
+const Vehicle = {
+  // ...
+}
+// 首先，创建一个空对象，将整个`Vehicle`拷贝到其中
+const Car = mixin(Vehicle, {})
+// 然后，将`Car`的特定内容添加到`Car`中
+mixin(
+  {
+    wheels: 4,
+    drive: function () {
+      // ...
+    },
+  },
+  Car
+)
+```
+
+不论哪种方法，我们都明确地将`Vehicle`中的非重叠内容拷贝到`Car`中。“mixin”这个名称来自于解释这个任务的另一种方法：`Car`**混
+入`Vehicle`**的内容，就像你把巧克力碎片混入你最喜欢的曲奇饼面团。
+
+这个拷贝操作的结果，是`Car`将会独立于`Vehicle`运行。如果你在`Car`上添加属性，他不会影响到`Vehicle`，反之亦然。
+
+:::warning
+
+这里有几个小细节被忽略了。仍然有一些微妙的方法使两个对象在拷贝完成后还能互相“影响”对方，比如它们共享一个共通对象（比如数组）的引用
+。
+
+:::
+
+由于两个对象还共享他们的共通函数的引用，这意味着**即便手动将函数从一个对象拷贝（也就是混入）到另一个对象中，也不能 *实际上模拟*发
+生在面向类的语言中的从类到实例的真正的复制**。
+
+JS 函数不能真正意义上地（以标准，可靠的方式）被复制，所以你最终得到的是同一个共享的函数对象（函数是对象）的**被复制的引用**。举例
+来说，如果你在一个共享的函数对象（比如`ignition()`）上添加属性来修改它，`Vehicle`和`Car`都会通过这个共享的引用而受“影响”。
+
+在 JS 中明确的 mixin 是一种不错的机制。但是它们显得言过其实。**和将一个属性定义两次相比**将属性从一个对象拷贝到另一个对象并不会产
+生多少*实际的*好处。而且由于我们刚才提到的函数对象引用的微妙之处，这显得尤为正确。
+
+如果你明确地将两个或更多对象混入你的目标对象，你可以**某种程度上模拟**“多重继承”的行为，但是在将方法或属性从多于一个源对象那里拷贝
+过来时，没有直接的办法可以解决名称的冲突。有些开发者/库使用“延迟绑定（late binding）”和其他诡异的替代方法来解决问题，但从根本上讲
+，这些“技巧”*通常*得不偿失（而且低效！）。
+
+要小心的是，仅在明确的 mixin 能够实际提高代码可读性时使用它，而如果你发现它使代码变得更难追溯，或在对象间建立了不必要或笨重的依赖
+性时，要避免使用这种模式。
+
+**如果正确使用 mixin 是你的问题变得比以前*困难* ，**那么你可能应当停止使用 mixin。事实上，如果你不得不使用复杂的库/工具来处理这些
+细节，那么这可能标志着你正走在更困难，也许没必要的道路上。第六章中，我们将试着提取一种更简单的方法来实现我们期望的结果，同时免去这
+些周折。
+
+#### 寄生继承（parasitic inheritance）
+
+明确的 mixin 模式的一个变种，在某种意义上是明确的而某种意义上是隐含的，称为“寄生继承（parasitic inheritance）”，它主要由 Douglas
+Crockford 推广的。
+
+```javascript
+// “传统的 JS 类” `Vehicle`
+function Vehicle() {
+  this.engines = 1
+}
+Vehicle.prototype.ignition = function () {
+  console.log('Turning on my engine.')
+}
+Vehicle.prototype.drive = function () {
+  this.ignition()
+  console.log('Steering and moving forward!')
+}
+// “寄生类” `Car`
+function Car() {
+  // 首先，`car`是一个`Vehicle`
+  const car = new Vehicle()
+  // 接着，我们对`car`进行定制
+  car.wheels = 4
+  // 保存一个`Vehicle::drive()`的引用
+  const vehDrive = car.drive
+  // 重写（覆盖）`Vehicle::drive()`
+  car.drive = function () {
+    vehDrive.call(this)
+    console.log('Rolling on all ', this.wheels, ' wheels!')
+  }
+  return car
+}
+
+var myCar = new Car()
+myCar.drive()
+// Turning on my engine.
+// Steering and moving forward!
+// Rolling on all 4 wheels!
+```
+
+如你所见，我们一开始从“父类”（对象）`Vehicle`制造了一个定义的拷贝，之后将我们的“子类”（对象）定义混入其中（按照需要保留父类的引用
+），最后将组合好的对象`car`作为子类实例传递出去。
+
+::: warning
+
+当我们调用`new Car`时，一个新对象被创建并被`Car`的`this`所引用。但是由于我们没有使用这个对象，而是返回我们自己的`car`对象，所以这
+个初始化创建的对象就被丢弃了。因此，`Car()`可以不用`new`关键字调用，就可以实现和上面代码相同的功能，而且还可以省去对象的创建和回收
+。
+
+:::
+
+### 隐含的 mixin（implicit mixins）
+
+隐含的 mixin 和前面解释的*显式假想多态*是紧密相关的。所以它们需要注意相同的事项。
+
+```javascript
+const Something = {
+  cool: function () {
+    this.greeting = 'Hello World'
+    this.count = this.count ? this.count + 1 : 1
+  },
+}
+Something.cool()
+Something.greeting // 'Hello World'
+Something.count // 1
+
+const Another = {
+  cool: function () {
+    // 隐式的将`Something`混入`Another`
+    Something.cool.call(this)
+  },
+}
+
+Another.cool()
+Another.greeting // 'Hello World'
+Another.count // 1 （不会和 `Something` 共享状态）
+```
+
+`Something.cool.call(this)`既可以在“构造器”调用中使用（最常见的情况），也可以在方法的调用中使用（如上所示），我们实质上“借用”
+了`Something.cool()`函数并在`Another`环境下，而非`Something`环境下调用它（通过`this`绑定）。结果是，`Something.cool()`中进行的赋值
+被实施到了`Another`对象而非`Something`对象。
+
+那么，这就是说我们将`Something`的行为“混入”了`Another`。
+
+虽然这种技术看起来有效利用了`this`再绑定的功能，也就是生硬地调用`Something.cool.call(this)`，但是这种调用不被被作为相对（也更灵活
+的）引用，所以你应当**提高警惕**。一般来说，*应当尽量避免使用这种解构*以保持代码干净且易于维护。
+
+## 总结
+
+类是一种设计模式。许多语言提供语法来启用自然而然的面向类的软件设计。JS 也有类似的语法，但是它的行为和你在其他语言中熟悉的工作原
+理**有很大不同**。
+
+**类意味着拷贝**。
+
+当一个传统的类被实例化时，就发生了类的行为向实例中拷贝。当类被继承时，也发生父类的行为向子类的拷贝。
+
+多态（再继承链的不同层级上拥有同名的不同函数）也许看起来意味着一个从子类回到父类的相对引用链接，但是它仍然只是拷贝行为的结果。
+
+JS**不会自动地**（像类那样）再对象间创建拷贝。
+
+mixin 模式常用于在*某种程度上*模仿类的拷贝行为，但是这通常导致显式假想多态那样（OtherObj.methodName.call(this, ...)）难看而且脆弱
+的语法，这样的语法又常导致更难懂和更难维护的代码。
+
+明确的 mixin 和类*拷贝*又不完全相同，因为对象（和函数）仅仅是共享的引用被复制，不是对象/函数本身被复制。不注意这样的微小之处通常是
+各种陷阱的根源。
+
+一般来讲，在 JS 中模拟类通常会比解决当前*真正*的问题埋下更多的坑。
