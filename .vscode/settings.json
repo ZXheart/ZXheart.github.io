@@ -3,9 +3,7 @@
   "eslint.experimental.useFlatConfig": true,
 
   // Disable the default formatter, use eslint instead
-  "prettier.enable": true,
-  "prettier.printWidth": 130,
-  "editor.formatOnSave": true,
+  // "prettier.enable": false,
 
   // Auto fix
   // "editor.codeActionsOnSave": {
@@ -38,7 +36,7 @@
     "json",
     "jsonc",
     "yaml",
-    "toml"
-    // "markdown",
+    "toml",
+    "markdown"
   ]
 }

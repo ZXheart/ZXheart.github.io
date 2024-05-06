@@ -14,13 +14,14 @@ import Gap from '../components/grid/11-Gap.vue'
 
 # :zzz:
 
-## 前言
+[MDN](https://developer.mozilla.org/zh-CN/docs/Web/CSS/CSS_grid_layout/Basic_concepts_of_grid_layout)
 
-跟随[MDN](https://developer.mozilla.org/zh-CN/docs/Web/CSS/CSS_grid_layout/Basic_concepts_of_grid_layout)，学习 grid 布局
+## 前言
 
 本文示例使用[UnoCSS](https://unocss.dev/)，在阅读之前最好对 UnoCSS 有一定了解。
 
-使用了`presetUno`和`presetWind`两个预设，`presetUno`是 UnoCSS 的默认预设，`presetWind`是 TailwindCSS 的预设，书写方法及功能更加丰富。
+使用了`presetUno`和`presetWind`两个预设，`presetUno`是 UnoCSS 的默认预设，`presetWind`是 TailwindCSS 的预设，书写方法及
+功能更加丰富。
 
 ## 概念
 
@@ -28,11 +29,13 @@ import Gap from '../components/grid/11-Gap.vue'
 
 ## 网格容器(Grid container)
 
-通过在元素上声明`display: grid` 或 `display: inline-grid`来创建一个网格容器。网格容器中的所有子元素都会成为*网格元素*。看起来和常规块元素无二致，其实已经能精准随意摆布*网格元素*
+通过在元素上声明`display: grid` 或 `display: inline-grid`来创建一个网格容器。网格容器中的所有子元素都会成为*网格元素*。
+看起来和常规块元素无二致，其实已经能精准随意摆布*网格元素*
 
-```vue{15,16}
+```vue
 <template>
-  <div class="
+  <div
+    class="
     common-wrapper
     grid <!-- [!code ++] -->
   ">
@@ -45,9 +48,9 @@ import Gap from '../components/grid/11-Gap.vue'
 </template>
 
 <style>
-  /* style标签上没有使用scope和module，该SFC定义如下两个style全局适用。
-    其它SFC文件将不再声明直接引用 */
-  .common-wrapper{
+  /* style标签上没有使用scope和module，该SFC定义如下两个style全局适用。 /* [!code highlight] */
+  /* 其它SFC文件将不再声明直接引用  /* [!code highlight] */
+  .common-wrapper {
     @apply bg-soft-e b-rd-8px py-20px px-24px;
   }
   .common-item {
@@ -60,12 +63,13 @@ import Gap from '../components/grid/11-Gap.vue'
 
 ## 网格轨道(Grid tracks)
 
-**网格轨道是网格上任意两条相邻线之间的空间**。使用`grid-template-columns`和`grid-template-rows`属性或简写的`grid`属性来定义网格的行和列。
+**网格轨道是网格上任意两条相邻线之间的空间**。使用`grid-template-columns`和`grid-template-rows`属性或简写的`grid`属性来
+定义网格的行和列。
 
 ### 基本示例
 
-为[上边示例](#网格容器-grid-container)添加`grid-template-columns: 150px 150px 150px;`属性，将网格容器中的子元素被分成了三列，每列宽度为 150px。
-还能得到的信息：
+为[上边示例](#网格容器-grid-container)添加`grid-template-columns: 150px 150px 150px;`属性，将网格容器中的子元素被分成了
+三列，每列宽度为 150px。还能得到的信息：
 
 - 仅指定网格元素宽度，网格元素的高度就由内容决定(其实就是隐式轨道)
 - 若网格元素的总宽度小于网格容器的宽度，那么剩余空间将会被留白
@@ -90,8 +94,8 @@ import Gap from '../components/grid/11-Gap.vue'
 
 ### fr 单位 (fraction)
 
-`grid-template-columns`和`grid-template-rows`属性值可以是你知道的任何 CSS 长度单位，此外还有一个特殊的单位`fr`，它表示一个网格轨道的剩余空间。
-`fr`只会和其他`fr`按比例分配固额(px rem vw vh %...)之外的剩余空间。
+`grid-template-columns`和`grid-template-rows`属性值可以是你知道的任何 CSS 长度单位，此外还有一个特殊的单位`fr`，它表示一
+个网格轨道的剩余空间。 `fr`只会和其他`fr`按比例分配固额(px rem vw vh %...)之外的剩余空间。
 
 网格容器中的子元素被分成了三列，每列宽度为 1fr，即三列等宽。
 
@@ -131,7 +135,6 @@ import Gap from '../components/grid/11-Gap.vue'
     <div class="common-item">5</div>
   </div>
 </template>
-<style></style>
 ```
 
 <FrUnequalSize />
@@ -204,8 +207,8 @@ import Gap from '../components/grid/11-Gap.vue'
 
 ### 显式和隐式网格轨道
 
-`grid-template-columns`和`grid-template-rows`属性定义的是显式网格轨道，它们定义了网格的结构。
-如上示例，我们使用`grid-template-columns`显式定义了列轨道，但是网格容器会自行创建行轨道，这些行轨道称为 **隐式网格轨道**。
+`grid-template-columns`和`grid-template-rows`属性定义的是显式网格轨道，它们定义了网格的结构。如上示例，我们使
+用`grid-template-columns`显式定义了列轨道，但是网格容器会自行创建行轨道，这些行轨道称为 **隐式网格轨道**。
 
 默认**隐式轨道会自动调整大小，取决于它们轨道内的内容**
 
@@ -218,7 +221,7 @@ import Gap from '../components/grid/11-Gap.vue'
   <div
     class="
     common-wrapper
-    grid grid-cols-3 
+    grid grid-cols-3
     grid-auto-rows-50px <!-- [!code ++] -->
   ">
     <div class="common-item">1</div>
@@ -234,9 +237,11 @@ import Gap from '../components/grid/11-Gap.vue'
 
 ### minmax()函数
 
-minmax()函数定义一个长宽范围的闭区间。在设置**显式网格**或定义**自动创建的行或列**的大小时，可以为其设置一个最小值和最大值。
+minmax()函数定义一个长宽范围的闭区间。在设置**显式网格**或定义**自动创建的行或列**的大小时，可以为其设置一个最小值和最大
+值。
 
-1. 设置显示网格的大小。缩放浏览器，第二列轨道的宽度会在 150px 和 1fr 之间变化。浏览器宽度足够时，第二列与其他两列等宽。反之，第二列最小宽度为 150px。
+1. 设置显示网格的大小。缩放浏览器，第二列轨道的宽度会在 150px 和 1fr 之间变化。浏览器宽度足够时，第二列与其他两列等宽。
+   反之，第二列最小宽度为 150px。
 
 ```vue
 <template>
@@ -253,6 +258,7 @@ minmax()函数定义一个长宽范围的闭区间。在设置**显式网格**�
     <div class="common-item">5</div>
   </div>
 </template>
+
 <style>
   .explicit {
     /* [!code ++:3] */
@@ -269,7 +275,7 @@ minmax()函数定义一个长宽范围的闭区间。在设置**显式网格**�
 <template>
   <div
     class="
-    grid 
+    grid
     implicit <!-- [!code ++] -->
    ">
     <div class="common-item">
@@ -288,6 +294,7 @@ minmax()函数定义一个长宽范围的闭区间。在设置**显式网格**�
     <div class="common-item">5</div>
   </div>
 </template>
+
 <style>
   .implicit {
     /* [!code ++:4] */
@@ -304,8 +311,8 @@ minmax()函数定义一个长宽范围的闭区间。在设置**显式网格**�
 
 ## 网格线(Grid lines)
 
-我们先前定义网格时，定义的时是网格轨道，不是**网格线**。网格布局为我们创建带编号的网格线，精确地控制每一个网格元素。
-如下三列两行网格中，包含**四纵**和**三横**网格线。
+我们先前定义网格时，定义的时是网格轨道，不是**网格线**。网格布局为我们创建带编号的网格线，精确地控制每一个网格元素。如下
+三列两行网格中，包含**四纵**和**三横**网格线。
 
 <GridLines />
 
@@ -313,7 +320,8 @@ minmax()函数定义一个长宽范围的闭区间。在设置**显式网格**�
 
 ### 根据网格线定位元素
 
-使用`grid-column-start`、`grid-column-end`和`grid-row-start`、`grid-row-end`属性配合网格线，可以精确地控制每一个网格元素。
+使用`grid-column-start`、`grid-column-end`和`grid-row-start`、`grid-row-end`属性配合网格线，可以精确地控制每一个网格元素
+。
 
 `col-start-1`和`col-end-3`表示从纵 1 到纵 3，即`common-item-1`占用 2 条纵轨道的宽度
 
@@ -344,7 +352,6 @@ minmax()函数定义一个长宽范围的闭区间。在设置**显式网格**�
     </div>
   </div>
 </template>
-<style></style>
 ```
 
 <AgainstLines />
@@ -434,8 +441,8 @@ minmax()函数定义一个长宽范围的闭区间。在设置**显式网格**�
 
 ### 负数网格线
 
-我们可以从最右端的列线和底端的行线开始计数，这两条线会被记为`-1`，倒数第 2 条线记为`-2`，以此类推。
-注意，最后一条线是指显示定义的最后一条线，即`grid-template-columns`和`grid-template-rows`定义的网格，隐式定义的网格不会被考虑在内。
+我们可以从最右端的列线和底端的行线开始计数，这两条线会被记为`-1`，倒数第 2 条线记为`-2`，以此类推。注意，最后一条线是指
+显示定义的最后一条线，即`grid-template-columns`和`grid-template-rows`定义的网格，隐式定义的网格不会被考虑在内。
 
 ## 网格间距
 

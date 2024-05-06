@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "composite": true,
-    "target": "ES2017",
+    "target": "ES2022",
     "lib": ["DOM", "ESNext"],
     "baseUrl": "./",
     "module": "ESNext",
@@ -31,7 +31,22 @@
     "**/*.mts",
     "**/*.tsx",
     "**/*.vue",
+    "**/*.md",
+    "**/*.d.ts",
     "docs/.vitepress/**/*.ts"
   ],
-  "exclude": ["**/.cache", "**/.temp", "**/.tmp", "**/cache", "**/temp", "**/tmp", "**/dist", "**/node_modules", "eslint.config.js"]
+  "vueCompilerOptions": {
+    "vitePressExtensions": [".md"]
+  },
+  "exclude": [
+    "**/.cache",
+    "**/.temp",
+    "**/.tmp",
+    "**/cache",
+    "**/temp",
+    "**/tmp",
+    "**/dist",
+    "**/node_modules",
+    "eslint.config.js"
+  ]
 }
