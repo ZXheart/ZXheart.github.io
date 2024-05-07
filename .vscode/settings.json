@@ -4,6 +4,7 @@
 
   // Disable the default formatter, use eslint instead
   // "prettier.enable": false,
+  "prettier.enable": true,
 
   // Auto fix
   // "editor.codeActionsOnSave": {
