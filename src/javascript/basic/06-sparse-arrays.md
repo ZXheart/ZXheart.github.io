@@ -1,5 +1,7 @@
 # :zzz:
 
+## empty slots
+
 数组可以包含“空槽（empty slots）”，这与用值`undefined`填充的槽不同。带有空槽的数组称为“稀疏数组（sparse arrays）”。
 
 空槽可以通过以下方式之一创建：
