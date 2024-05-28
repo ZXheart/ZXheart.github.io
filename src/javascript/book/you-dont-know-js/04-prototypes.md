@@ -325,3 +325,340 @@ console.log(Object.getPrototypeOf(f) === Foo.prototype) // true
 function Foo() {}
 const a = new Foo()
 ```
+
+到底是什么导致我们认为`Foo`是一个类？
+
+其一，我们看到了`new`关键字的使用，就像面向类语言中人们构建类的对象那样。此外，它看起来我们事实上执行了一个类的*构造
+器*方法，因为`Foo()`实际上时被调用的方法，就像当你初始化一个真实的类时这个类的构造器被调用的那样。
+
+为了使“构造器”的语义更令人糊涂，被随意贴上标签的`Foo.prototype`对象还有另外一招：
+
+```javascript
+function Foo() {}
+Foo.prototype.constructor === Foo // true
+
+const a = new Foo()
+a.constructor === Foo // true
+```
+
+`Foo.prototype`对象默认地（就在代码段中第一行中声明的地方！）得到一个公有的，称为`.constructor`的不可枚举属性，而且这个
+属性回头指向这个对象关联的函数（`Foo`）。另外，我们看到被“构造器”调用`new Foo()`创建的对象`a`*看起来*也拥有一个称
+为`.constructor`的属性，也相似地指向“创建它的函数”。
+
+::: warning
+
+这实际上不是真的。`a`上没有`.constructor`属性，而`a.constructor`确实解析成了`Foo`函数，“constructor”并不像它看起来的那样
+实际意味着“被 XX 创建”。
+
+哦，是的，另外... 根据 JS 世界中的惯例，“类”都以大写字母开头的单词命名，所以使用`Foo`而不是`foo`强烈地意味着我们打算让它
+成为一个“类”。
+
+这个惯例是如此强大，以至于如果你在一个小写字母名称的方法上使用`new`调用， 或并没有在一个大写字母开头的函数上使用`new`，
+许多 JS 语法检查器将会报告错误。这是因为我们如此如此努力地想要在 JS 中将（假得）“面向类”_搞对_，所以我们建立了这些语法规
+则来确保我们使用了大写字母，即便对 JS 引擎来讲，大写字母根本没有*任何意义*。
+
+:::
+
+#### 构造器还是调用？
+
+上面代码中，我们试图认为`Foo`是一个“构造器”，是因为我们用`new`调用它，而且我们观察到它“构建”了一个对象。
+
+在现实中，`Foo`不会比你的程序中的其他任何函数“更像构造函数”。函数本身**不是**构造器。但是，当你在普通函数调用前放一
+个`new`关键字时，这就将函数调用变成了“构造器调用”。事实上，`new`在某种意义上劫持了普通函数并将它以另一种方式调用：构建一
+个对象，**外加这个函数要做的其他任何事**。
+
+举个例子：
+
+```javascript
+function NothingSpecial() {
+  console.log("Don't mind me!")
+}
+
+const a = new NothingSpecial() // Don't mind me!
+
+a // {}
+```
+
+`NothingSpecial`仅仅是一个普通函数，但当用`new`调用时，几乎是一种副作用，它会*构建*一个对象，并被我们赋值到`a`。这个**调
+用**是一个*构造器调用*，但是`NothingSpecial`本身并不是一个*构造器*。
+
+换句话说，在 JS 中，更合适的说法是，“构造器”是在前面**用`new`关键字调用的任何函数**。
+
+函数不是构造器，但是当且仅当`new`被使用时，函数调用是一个“构造器调用”。
+
+### 机制
+
+j 仅仅是这些原因使得 JS 中关于“类”的讨论变得命运多舛吗？
+
+**不全是**。JS 开发者们尽可能地模拟面向类：
+
+```javascript
+function foo(name) {
+  this.name = name
+}
+Foo.prototype.myName = function () {
+  return this.name
+}
+
+const a = new Foo('a')
+const b = new Foo('b')
+
+a.myName() // a
+b.myName() // b
+```
+
+这段代码展示了另外两种“面向类”的花招：
+
+1. `this.name = name`：在每个对象（分别在`a`和`b`上；）上添加了`.name`属性，和类的实例包装数据值很相似。
+
+2. `Foo.prototype.myName = ...`：这也许是更有趣的技术，它在`Foo.prototype`对像上添加了一个属性（函数）。现在，也许让人惊
+   讶，`a.myName()`可以工作。但是如何工作的呢？
+
+在上边代码中，有很强的倾向认为`a`和`b`被创建时，`Foo.prototype`上的属性/函数被*拷贝*到了`a`和`b`两个对象上。**但是，这没
+有发生**。
+
+在本章开头，我们解释了`[[Prototype]]`链，以及它如何作为默认的`[[Get]]`算法的一部分，在不能直接在对象上找到属性引用时提供
+后备的查询步骤。
+
+于是，得益于他们被创建的方式，`a`和`b`都最终拥有一个内部的`[[Prototype]]`链接链到`Foo.prototype`。当无法分别在`a`和`b`中
+找到时，就会在`Foo.prototype`上找到。
+
+#### 复活“构造器”
+
+回想我们刚才对`.constructor`属性的讨论，怎么看起来`a.constructor === Foo`为 true 意味着`a`上实际拥有一个`.constructor`属
+性，指向`Foo`?**不对**。
+
+这只是一种不幸地混淆。实际上，`.constructor`引用也*委托*到了`Foo.prototype`，它**恰好**有一个指向`Foo`的默认属性。
+
+这*看起来*方便的可怕，一个被`Foo`构建的对象可以访问指向`Foo`的`.constructor`属性。但这只不过是安全感上的错觉。它是一个欢
+乐的巧合，几乎是误打误撞，通过默认的`[[Prototype]]`委托`a.constructor`*恰巧*指向`Foo`。实际上`.constructor`意味着“被 XX
+构建”这种注定失败的臆测会以几种方式来咬到你。
+
+第一，在`Foo.prototype`上的`.constructor`属性仅当`Foo`函数被声明时才会现在对象上。如果你创建一个新对象，并用它替换函数默
+认的 `.prototype`对象引用，这个新对象上将不会魔法般地得到`.constructor`。
+
+```javascript
+function Foo() {}
+Foo.prototype = {}
+
+const a = new Foo()
+a.constructor === Foo // false
+a.constructor === Object // true
+```
+
+`Object(..)`没有“构建”`a`，是吧？看起来确实是`Foo()`“构建了”它。许多开发者认为`Foo()`在执行构建，但当你认为“构造器”意味
+着“被 XX 构建”时，一切就都崩塌了，因为如果那样的话，`a.constructor`应当指向`Foo`，但它不是！
+
+发生了什么？`a`没有`constructor`属性，所以他沿着`[[Prototype]]`链向上委托到了`Foo.prototype`。但是这个对象也没
+有`.constructor`（默认的`Foo.prototype对象就会有！`），所以他继续委托，这次轮到`Object.prototype`，委托链的最顶端。*那
+个*对象上确实拥有`.constructor`，它指向内建的`Object(..)`函数。
+
+** 误解，消除**。
+
+当然，你可以把`.constructor`加回到`Foo.prototype`对象上，但是要做一些手动工作，特别是如果你想要它与原生的行为吻合，并不
+可枚举时：
+
+```javascript
+function Foo() {}
+Foo.prototype = {}
+Object.defineProperty(Foo.prototype, 'constructor', {
+  enumerable: false,
+  writable: true,
+  configurable: true,
+  value: Foo,
+})
+```
+
+修复`.constructor`要花不少功夫。而且，我们做的一切是为了延续“构造器”意味着“被 XX 构建”的误解。这是一种昂贵的假想。
+
+事实上，一个对象的`.constructor`默认地随意指向一个函数，而这个函数反过来拥有一个指向被这个对象称为`.prototype`的对象。“
+构造器”和“原型”这两个词仅有松散的默认含义，可能是真的也可能不是真的。最佳方案是提醒你自己，“构造器不是意味着被 XX 构建
+”。
+
+`.constructor`不是一个魔法般不可改变的属性。它是不可枚举的，但是它的值是可写的，而且，你可以用你感觉合适的任何值
+在`[[Prototype]]`链上的任何对象上添加或覆盖（有意或无意）名为`constructor`的属性。
+
+根据`[[Get]]`算法如何遍历`[[Prototype]]`链，在任何地方找到一个`.constructor`属性来引用解析的结果可能与你期望的十分不同。
+
+看到它的实际意义有多随便了吗？
+
+结果？某些像`a.constructor`这个随意的对象属性引用实际上不能被认为是默认的函数引用。还有，我们马上就会看到，通过一个简单
+的省略，`a.constructor`可以最终只想某些令人诧异，没道理的地方。
+
+`a.constructor`是极其不可靠的，在你的代码中不应依赖的不安全引用。**一般来说，这样的引用应当尽量避免**。
+
+## “（原型）继承”
+
+我们已经看到了一些近似的“类”机制黑进 JS 程序。但是如果我们没有一种近似的“继承”，JS 的“类”将会更空洞。
+
+实际上，我们已经看到了一个常被称为“原型继承”的机制如何工作：`a`可以“继承自”`Foo.prototype`，并因此可以访问`myName()`。但
+是我们传统的想法认为“继承”是两个“类”间的关系，而非“类”与“实例”的关系。
+
+这里是一段典型的创建这样的链接的“原型风格”代码：
+
+```javascript
+function Foo(name) {
+  this.name = name
+}
+Foo.prototype.myName = function () {
+  return this.name
+}
+function Bar(name, label) {
+  Foo.call(this, name)
+  this.label = label
+}
+// 创建一个新的`Bar.prototype` 链接到 `Foo.prototype`
+Bar.prototype = Object.create(Foo.prototype)
+// 但是，现在的`Bar.prototype.constructor`不存在了，
+// 如果有依赖这个属性的习惯的话，它可以被手动“修复”。
+Bar.prototype.myLabel = function () {
+  return this.label
+}
+const a = new Bar('a', 'obj a')
+a.myName() // a
+a.myLabel() // obj a
+```
+
+重要的部分是`Bar.prototype = Object.create( Foo.prototype )`。`Object.create(..)`凭空*创建*了一个“新”对象，并将这个新对
+象内部的`[[Prototype]]`连接到你指定的对象上（在这里是`Foo.prototype`）。
+
+换句话说，这一行的意思是：“做一个*新的*链接到‘Foo 点 prototype’的‘Bar 点 prototype’对象”。
+
+当`function Bar(){..}`被声明时，就像其它函数一样，拥有一个链到默认对象的`.prototype`链接。但是*那个*对象没有链到我们希望
+的`Foo.prototype`。所以，我们创建了一个*新*对象，链到我们希望的地方，并将原来的错误链接的对象扔掉。
+
+这里一个常见的误解/困惑时，下面两种方法*也*能工作，但是它们不会如你期望的那样工作：
+
+```javascript
+// 不会如你期望的那样工作！
+Bar.prototype = Foo.prototype
+
+// 会如你期望工作，但会带有你可能不想要的副作用
+Bar.prototype = new Foo()
+```
+
+`Bar.prototype = Foo.prototype`不会创建新对象让`Bar.prototype`链接。它只是让`Bar.prototype`成为`Foo.prototype`的另一个引
+用，将`Bar`直接链接到`Foo`链着的**同一个对象：**`Foo.prototype`。这意味着当你开始赋值时，比
+如`Bar.prototype.myLabel = ...`，你修改的**不是一个分离的对象**而是那个被分享的`Foo.prototype`对象本身，它将影响到所有链
+接到`Foo.prototype`的对象。这几乎可以确定不是你想要的。如果这正是你想要的，那么你根本不需要`Bar`，你应当仅使用`Foo`来使
+你的代码更简单。
+
+`Bar.prototype = new Foo()`**确实**创建了一个新对象，这个新对象也的确连接到了我们希望的`Foo.prototype`。但是，它是
+用`Foo(..)`“构造器调用”来这样做的。如果这个函数有任何副作用（如果 logging，改变状态，注册其他对象，**向`this`添加数据属
+性**，等等），这些副作用就会在链接时发生（而且很可能是对错误的对象！），而不是像可能希望的那样，仅最终在`Bar()`的“后裔”
+创建时发生。
+
+于是，我们剩下的选择就是使用`Object.create(..)`来制造一个新对象，这个对象被正确链接，而且没有调用`Foo(..)`时所产生的副作
+用。一个轻微的缺点是，我们不得不创建新对象，并把旧的扔掉，而不是修改提供给我们的默认既存对象。
+
+如果有一种标准且可靠地方法来修改既存对象的链接就好了。ES6 之前，有一个非标准的，而且不是完全对所有浏览器通用的方法：通过
+可以内置的`.__proto__`。ES6 中增加了`Object.setPrototypeOf(..)`辅助工具，它提供了标准且可预见的方法。
+
+让我们一对一比较下 ES6 之前和 ES6 标准的技术如何处理将`Bar.prototype`链接至`Foo.prototype`：
+
+```javascript
+// ES6 之前
+// 扔掉默认既存的`Bar.prototype`(Bar实例的`constructor`指向`Foo`)
+Bar.prototype = Object.create(Foo.prototype)
+// ES6+
+// 修改既存的`Bar.prototype`(Bar实例的`constructor`指向`Bar`)
+Object.setPrototypeOf(Bar.prototype, Foo.prototype)
+```
+
+如果忽略`Object.create(..)`方式在性能上的轻微劣势（扔掉一个对象，然后被回收），其实它相对短一些而且可能比 ES6+的方式更易
+读。但两种方式可能都只是语法表面现象。
+
+### 考察“类”关系
+
+如果你有一个对象`a`并且希望找到它委托至哪个对象呢（如果有的话）？考察一个实例（一个 JS 对象）的继承血统（在 JS 中是委托
+链接），在传统的面向类环境中成为*自省（introspection）或反射（reflection）*。
+
+```javascript
+function Foo(){}
+Foo.prototype.blah = ...
+const a = new Foo()
+```
+
+我们如何自省`a`来找到它的“祖先”（委托链）呢？一种方式是接受“类”的困惑：
+
+```javascript
+a instanceof Foo // true
+```
+
+`instanceof`操作符的左侧操作数接收一个普通对象，右侧操作数接收一个**函数**。`instanceof`回答的问题是：**在`a`的整
+个`[[Prototype]]`链中，有没有出现那个被`Foo.prototype`所随便指向的对象？**
+
+`instanceof`**运算符**用于检测构造函数的`prototype`属性是否出现在某个实例对象的原型链上。-MDN
+
+不幸的是，这意味着如果你拥有可以用于测试的**函数**（`Foo`，和它带有的`.prototype`引用），你只能查询某些对象（`a`）的“祖
+先”。如果你有两个任意的对象，比如`a`和`b`，而且你想调查是否*这些对象*通过`[[Prototype]]`链相互关联，单靠`instanceof`帮不
+上什么忙。
+
+如果你使用内建的`bind(..)`工具来制造一个硬绑定的函数，这个被创建的函数将不会拥有`.prototype`属性，将`instanceof`与这样的
+函数一起使用时，将会透明地替换为创建这个硬绑定函数的*目标函数*的`.prototype`。
+
+将硬绑定函数用于“构造器调用”十分罕见，但如果你这么做，它会表现得好像是*目标函数*被调用了，这意味着将`instanceof`与硬绑定
+函数一起使用也会参照原版函数。
+
+下面这段代码展示了试图通过“类”的语义和`instanceof`来推导**两个对象**间的关系是多么荒谬：
+
+```javascript
+// 用来检查`o1`是否关联到（委托至）`o2`的帮助函数
+function isRelatedTo(o1, o2) {
+  function F() {}
+  F.prototype = o2
+  return o1 instanceof F
+}
+const a = {}
+const b = Object.create(a)
+isRelatedTo(b, a) // true
+```
+
+在`isRelatedTo(..)`内部，我们借用一个一次性的函数`F`，重新对它的`.prototype`赋值，使它随意地指向某个对象`o2`，之后
+问`o1`是否是`F`的“一个实例”。很明显，`o1`实际上不是继承或遗传自`F`，甚至不是由`F`构建的，所以显而易见这种做法是愚蠢且让
+人困惑地。**这个问题归根结底是将类的语义强加于 JS 的尴尬**，在这个例子中是由`instanceof`的间接语义揭露的。
+
+第二种，也是更干净的一种，`[[Prototype]]`反射：
+
+```javascript
+Foo.prototype.isPrototypeOf(a) // true
+```
+
+注意在这种情况下，我们并不真正关心（甚至*不需要*）`Foo`，我们仅需要一个**对象**（在我们的里走垂死被随意标志
+为`Foo.prototype`）来与另一个**对象**测试。`isPrototypeOf(..)`回答的问题是：**在`a`的整个`[[Prototype]]`链中
+，`Foo.prototype`出现过吗？**
+
+同样的问题，和完全一样的答案。但是在第二种方式中，我们实际上不需要间接地引用一个`.prototype`属性将被自动查询的**函
+数**（`Foo`）。
+
+我们*只需要*两个**对象**来考察它们之间的关系。比如：
+
+```javascript
+b.isPrototypeOf(a) // true
+```
+
+注意，这种方法根本不要求有一个函数（“类”）。它仅仅使用对象的直接引用`b`和`c`，来查询它们的关系。换句话说，我们上面
+的`isRelatedTo(..)`工具是内建在语言中的，它的名字叫做`isPrototypeOf(..)`。
+
+我们也可以直接取得一个对象的`[[Prototype]]`。在 ES5 中，这么做的标准方法是：
+
+```javascript
+Object.getPrototypeOf(a)
+```
+
+而且你将注意到对象引用是我们期望的：
+
+```javascript
+Object.getPrototypeOf(a) === Foo.prototype // true
+```
+
+多数浏览器（不是全部！）还长期支持的，非标准方法可以访问内部的`[[Prototype]]`：
+
+```javascript
+a.__proto__ === Foo.prototype // true
+```
+
+这个奇怪的`.__proto__`（直到 ES6 才被标准化！）属性“魔法般地”取得一个对象内部的`[[Prototype]]`作为引用，如果你想要直接考
+察（甚至遍历：`._proto__.__proto__...`）`[[Prototype]]`链，这个引用十分有用。
+
+和我们早先看到的`.constructor`一样，`.__proto__`实际上不存在于你考察的对象上（在我们的例子中）
