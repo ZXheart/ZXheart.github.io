@@ -2,6 +2,8 @@
 
 [《你不知道的 JavaScript》](https://github.com/getify/You-Dont-Know-JS/blob/1ed-zh-CN/this%20%26%20object%20prototypes/ch5.md)
 
+# 原型（prototype）
+
 :::warning
 
 所有模拟类拷贝行为的企图，也就是我们在前面第四章描述的内容，称为各种种类的“mixin”，和我们要在本章讲解的`[[Prototype]]`链
@@ -571,7 +573,7 @@ Object.setPrototypeOf(Bar.prototype, Foo.prototype)
 ### 考察“类”关系
 
 如果你有一个对象`a`并且希望找到它委托至哪个对象呢（如果有的话）？考察一个实例（一个 JS 对象）的继承血统（在 JS 中是委托
-链接），在传统的面向类环境中成为*自省（introspection）或反射（reflection）*。
+链接），在传统的面向类环境中称为*自省（introspection）或反射（reflection）*。
 
 ```javascript
 function Foo(){}
@@ -624,7 +626,7 @@ isRelatedTo(b, a) // true
 Foo.prototype.isPrototypeOf(a) // true
 ```
 
-注意在这种情况下，我们并不真正关心（甚至*不需要*）`Foo`，我们仅需要一个**对象**（在我们的里走垂死被随意标志
+注意在这种情况下，我们并不真正关心（甚至*不需要*）`Foo`，我们仅需要一个**对象**（在我们的例子中被随意标志
 为`Foo.prototype`）来与另一个**对象**测试。`isPrototypeOf(..)`回答的问题是：**在`a`的整个`[[Prototype]]`链中
 ，`Foo.prototype`出现过吗？**
 
@@ -661,4 +663,236 @@ a.__proto__ === Foo.prototype // true
 这个奇怪的`.__proto__`（直到 ES6 才被标准化！）属性“魔法般地”取得一个对象内部的`[[Prototype]]`作为引用，如果你想要直接考
 察（甚至遍历：`._proto__.__proto__...`）`[[Prototype]]`链，这个引用十分有用。
 
-和我们早先看到的`.constructor`一样，`.__proto__`实际上不存在于你考察的对象上（在我们的例子中）
+和我们早先看到的`.constructor`一样，`.__proto__`实际上不存在于你考察的对象上（在我们的例子中是`a`）。事实上，它和其他的
+共通工具在一起（`.toString(..)`，`.isPrototypeOf(..)`，等等），存在于（不可枚举地）内建的`Object.prototype`上。
+
+而且，`.__proto__`虽然看起来像一个属性，但实际上将它看作是一个 getter/setter 更合适。
+
+大致地，我们可以这样描述`.__proto__`的实现：
+
+```javascript
+Object.defineProperty(Object.prototype, '__proto__', {
+  get() {
+    return Object.getPrototypeOf(this)
+  },
+  set(o) {
+    // Object.setPrototypeOf(obj, [[prototype]])
+    Object.setPrototypeOf(this, o)
+    return o
+  },
+})
+```
+
+所以，当我们访问`a.__proto__`（取得它的值）时，就好像调用`a._proto__()`（调用 getter 函数）一样。虽然 getter 函数存在
+于`Object.prototype`上，但这个函数调用将`a`用作它的`this`，所以它相当于在说`Object.getPrototypeOf(a)`。
+
+`.__proto__`还是一个可设置的属性，就像早先展示过的 ES6`Object.setPrototypeOf(..)`。然而，一般来说，**你不应该改变一个既
+存对象的`[[Prototype]]`**。
+
+在某些允许对`Array`定义“子类”的框架中，深度地使用了一些非常复杂，高级的技术，但是这在一般的编程实践中经常是让人皱眉头的
+，因为这通常导致非常难理解/维护的代码。
+
+::: tip
+
+在 ES6 中，关键字`class`将允许某些近似方法，对像`Array`这样的内建类型“定义子类”。
+
+:::
+
+仅有一小部分例外（就像前面提到过的）会设置一个默认函数`.prototype`对象的`[[Prototype]]`，使它引用其他的对象
+（`Object.prototype`之外的对象）。它们会避免将这个默认对象完全替换为一个新的链接对象。否则，为了在以后更容易地阅读你的代
+码**最好将对象的`[[Prototype]]`链接作为只读性质对待**。
+
+::: tip
+
+针对双下划线，特别是在像`__proto__`这样的属性中开头的部分，JS 社区非官方地创造了一个术语：“dunder”。所以，那些 JS 的“酷
+小子”们通常将`__proto__`读作“dunder proto”。
+
+:::
+
+## 对象链接
+
+正如我们看到的，`[[Prototype]]`机制是一个内部链接，它存在于一个对象上，这个对象引用一些其他的对象。
+
+这个链接（主要）在对一个对象进行属性/方法引用，但这样的属性/方法不存在时实施。在这种情况下，`[[Prototype]]`链接告诉引擎
+在那个被链接的对象上查找这个属性/方法。接下来，如果这个对象不能满足查询，它的`[[Prototype]]`又会被查找，如此继续。这个在
+对象的一系列链接构成了所谓的“原型链”。
+
+### 创建链接
+
+我们已经彻底揭露了为什么 JS 的`[[Prototype]]`机制和*类*不一样，而且我们也看到了如何在正确的对象间创建**链接**。
+
+`[[Prototype]]`机制的意义是什么？为什么总是见到 JS 开发者们费大力气（模拟类）在他们的代码中搞乱这些链接？
+
+记得我们在本章很靠前的地方说过`Object.create(..)`是英雄吗？现在，我们准备好看看为什么了。
+
+```javascript
+var foo = {
+  something() {
+    console.log('Tell me something good...')
+  },
+}
+var bar = Object.create(foo)
+bar.something() // Tell me something good...
+```
+
+`Object.create(..)`创建了一个链接到我们指定的对象（`foo`）上的新对象（`bar`），这给了我们`[[Prototype]]`机制的所有力量（
+委托），而且没有`new`函数作为类和构造器调用产生的所有没必要的复杂性，搞乱`.prototype`和`.constructor`引用，或任何其他的
+多余的东西。
+
+::: tip
+
+`Object.create(null)`创建一个拥有空（也就是`null`）`[[Prototype]]`链接的对象，如此这个对象不能委托到任何地方。因为这样的
+对象没有原型链，`instanceof`操作符没有东西可检查，所以它总是返回`false`。由于它们典型的用途是在属性中存储数据，这种特殊
+的空`[[Prototype]]`对象经常被称为“字典（dictionaries）”，这主要是因为它们不可能受到在`[[Prototype]]`链上任何委托属性/函
+数的影响，所以它们是纯粹的扁平数据存储。
+
+:::
+
+我们不*需要*类来在两个对象间创建有意义的关系。我们需要**真正关心**的唯一问题是对象为了委托而链接在一起，
+而`Object.create(..)`给我们这种链接并且没有一切关于类的烂设计。
+
+#### 填补`Object.create()`
+
+`Object.create(..)`在 ES5 中被加入。你可能需要支持 ES5 之前的环境，所以让我们来看一个`Object.create(..)`的简单**部分**填
+补工具，它甚至能在更老的 JS 环境中给我们所需的能力：
+
+```javascript
+if (!Object.create) {
+  Object.create = function (o) {
+    function F() {}
+    F.prototype = o
+    return new F()
+  }
+}
+```
+
+这个填补工具通过一个一次性的`F`函数并覆盖它 de`.prototype`属性来指向我们想连接到的对象。之后我们用`new F()`构造器调用来
+制造一个将会链到我们指定对象上的新对象。
+
+`Object.create(..)`的这种用法是目前最常见的用法，因为它的这部分是*可以*填补的。ES5 标准的内建`Object.create(..)`还提供了
+一个附加的功能，它是**不能**被 ES5 之前的版本填补的。如此，这个功能的使用远没有那么常见。为了完整性，让我们看看这个附加
+功能：
+
+```javascript
+var obj = { a: 2 }
+var obj2 = Object.create(obj, {
+  b: {
+    enumerable: false,
+    writeable: true,
+    configurable: false,
+    value: 3,
+  },
+  c: {
+    enumerable: true,
+    writeable: false,
+    configurable: false,
+    value: 4,
+  },
+})
+console.log(obj2.hasOwnProperty('a')) // false
+console.log(obj2.hasOwnProperty('b')) // true
+console.log(obj2.hasOwnProperty('c')) // true
+console.log(obj2.a) // 2
+console.log(obj2.b) // 3
+console.log(obj2.c) // 4
+```
+
+`Object.create(..)`的第二个参数通过声明每个新属性的*属性描述符*制定了要添加在新对象上的属性。因为在 ES5 之前的环境中填补
+属性描述符是不可能的，所以`Object.create(..)`的这个附加功能无法填补。
+
+因为`Object.create(..)`的绝大多数用途都是使用填补安全的功能子集，所以大多数开发者在 ES5 之前的环境中使用这种**部分填
+补**也没有问题。
+
+有些开发者采取严格得多的观点，也就是除非能够被*完全*填补，否则没有函数应该被填补。因为`Object.create(..)`是可以部分填补
+的工具之一，所以这种狭窄的观点会说，如果你需要在 ES5 之前的环境中使用`Object.create(..)`的任何功能，你应当使用自定义的工
+具，而不是填补，而且应当远离使用`Object.create`这个名字。你可以定义自己的工具，比如：
+
+```javascript
+function createAndLinkObject(o) {
+  function F() {}
+  F.prototype = o
+  return new F()
+}
+var obj = { a: 2 }
+var obj2 = createAndLinkObject(obj)
+console.log(obj2.a) // 2
+```
+
+我不会分享这种严格的观点。我完全拥护如上面展示的`Object.create(..)`的常见部分填补，甚至在 ES5 之前的环境下在你的代码中使
+用它，我将选择权留给你。
+
+### 链接作为候补？
+
+也许这么想很吸引人：这些对象间的链接*主要*是为了给“缺失”的属性和方法提供某种候补。虽然这是一个可观察到的结果，但是我不认
+为这是考虑`[[Prototype]]`的正确方法。
+
+考虑下面的代码：
+
+```javascript
+var obj = {
+  cool() {
+    console.log('cool!')
+  },
+}
+var obj2 = Object.create(obj)
+obj2.cool() // cool!
+```
+
+得益于`[[Prototype]]`，这段代码可以工作，但如果你这样写是为了**万一**`obj2`不能处理某些开发者可能会调用的属性/方法，而
+让`obj`作为一个候补，你的软件大概会变得有点儿“魔性”且更难于理解和维护。
+
+这不是说候补在任何情况下都不是一个合适的设计模式，但它不是一个在 JS 中很常见的用法，所以如果你发现自己在这么做，那么你可
+能要退一步重新考虑它是否真的是合适且合理的设计。
+
+::: tip
+
+在 ES6 中，引入了一个称为`Proxy（代理）`的高级功能，它可以提供某种“方法未找到”类型的行为。
+
+:::
+
+**这里不要错过一个重要的细节**
+
+例如，你打算为一个开发者设计软件，如果即使在`obj2`上没有`cool()`方法时调用`obj2.cool()`也能工作，会在你的 API 设计上引入
+一些“魔法”气息，这可能会使未来维护你的软件的开发者很吃惊。
+
+然而你可以在你的 API 设计上少用些“魔法”，而仍然利用`[[Prototype]]`链接的力量。
+
+```javascript
+var obj = {
+  cool() {
+    console.log('cool!')
+  },
+}
+var obj2 = Object.create(obj)
+obj2.doCool = function () {
+  this.cool() // 内部委托！ internal delegation!
+}
+obj2.doCool() // cool!
+```
+
+这里，我们调用`obj2.doCool()`，它是一个*实际存在于*`obj2`上的方法，这使我们的 API 设计更清晰（没那么“魔性”）。_在它内
+部_，我们的实现依照**委托设计模式**，利用`[[Prototype]]`委托到`obj.cool()`。
+
+换句话说，如果委托是一个内部实现细节，而非在你的 API 结构设计中简单地暴露出来，那么它将倾向于减少意外/困惑。
+
+## 总结
+
+当试图在一个对象上进行属性访问，而对象又没有该属性时，对象内部的`[[Prototype]]`链接定义了`[[Get]]`操作下一步应当到哪里寻
+找它。这种对象到对象的串行链接定义了对象的“原型链”（和嵌套的作用域链有些相似），在解析属性时发挥作用。
+
+所有普通的对象用内建的`Object.prototype`作为原型链的顶端（就像作用于查询的顶端是全局作用域），如果属性没能在链条的前面任
+何地方找到，属性解析就会在这里停止。`toString()`，`valueOf()`，和其它几种共通工具都存在于这个`Object.prototype`对象上，
+这解释了语言中所有的对象时如何能够访问到它们的。
+
+使两个对象相互链接在一起的最常见的方法是将`new`关键字与函数调用一起使用，在它的四个步骤中，就会建立一个新对象链接到另一
+个对象。
+
+那个用`new`调用的函数有一个被随便地命名为`.prototype`的属性，这个属性所引用的对象恰好就是这个新对象链接到的“另一个对象
+”。带有`new`的函数调用通常被称为“构造器”，尽管实际上它们并没有像传统的面向类语言那样初始化一个类。
+
+虽然这些 JS 机制看起来和传统面向类语言的“初始化类”和“继承类”类似，而在 JS 中的关键区别是，没有拷贝发生。取而代之的是对象
+最终通过`[[Prototype]]`链链接在一起。
+
+由于各种原因，不光是前面提到的术语，“继承”（和“原型继承”）与所有其他的 OO 用语，在考虑 JS 实际如何工作时都没有道理。
+
+相反，“委托”是一个更确切的术语，因为这些关系不是*拷贝*而是委托**链接**。
