@@ -31,48 +31,22 @@
     </svg>
     <span class="bg-color">测试文本</span>
     <script>
-      Function.prototype.myBind = function (...outArgs) {
-        if (typeof this !== 'function') {
-          throw new TypeError('what is trying to be bound is not callable')
-        }
-        const aArgs = outArgs.slice(1)
-        const fToBind = this
-        const fBound = function (...inArgs) {
-          return fToBind.apply(this instanceof fBound && outArgs[0] ? this : outArgs[0], aArgs.concat(inArgs))
-        }
-        fBound.prototype = Object.create(this.prototype)
-        return fBound
-      }
       function foo() {
         console.log(this.a)
       }
-      var a = 'global'
-
-      const bar = foo.myBind(null, 3, 4, 5)
-      bar() // global
-      const barRes = new bar() // global
-
-      const baz = foo.bind(null, 3, 4, 5)
-      baz() // global
-      const res = new baz() // undefined
-
-      function foo(num) {
-        console.log('foo: ' + num)
-        this.count++
+      var obj1 = {
+        a: 1,
+        foo: foo,
       }
-      foo.count = 0
-      var i = 0
-      for (; i < 10; i++) {
-        if (i > 5) {
-          foo(i)
-        }
+      var obj2 = {
+        a: 2,
+        foo: foo,
       }
-      // foo: 6
-      // foo: 7
-      // foo: 8
-      // foo: 9
-      console.log(foo.count) // 0 -- WTF?
-      console.log(count) // NaN
+      obj1.foo() // 1
+      obj2.foo() // 2
+
+      obj1.foo.call(obj2) //2
+      obj2.foo.call(obj1) //1
     </script>
   </body>
 </html>
