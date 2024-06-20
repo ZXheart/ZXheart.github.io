@@ -61,12 +61,28 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
           text: "You Don't Know JS",
           collapsed: true,
           items: [
-            { text: 'this or that', link: 'book/you-dont-know-js/01-this' },
-            { text: 'this all makes sense now', link: 'book/you-dont-know-js/02-this' },
-            { text: 'object', link: 'book/you-dont-know-js/03-object' },
-            { text: `mixing (up) 'class' object`, link: 'book/you-dont-know-js/04-mixing-class-objects' },
-            { text: `prototypes`, link: 'book/you-dont-know-js/05-prototypes' },
-            { text: `behavior delegation`, link: 'book/you-dont-know-js/06-behavior-delegation' },
+            {
+              text: 'this & object prototype',
+              collapsed: true,
+              items: [
+                { text: 'this or that', link: 'book/you-dont-know-js/this&object-prototype/01-this' },
+                { text: 'this all makes sense now', link: 'book/you-dont-know-js/this&object-prototype/02-this' },
+                { text: 'object', link: 'book/you-dont-know-js/this&object-prototype/03-object' },
+                {
+                  text: `mixing (up) 'class' object`,
+                  link: 'book/you-dont-know-js/this&object-prototype/04-mixing-class-objects',
+                },
+                { text: `prototypes`, link: 'book/you-dont-know-js/this&object-prototype/05-prototypes' },
+                {
+                  text: `behavior delegation`,
+                  link: 'book/you-dont-know-js/this&object-prototype/06-behavior-delegation',
+                },
+              ],
+            },
+            {
+              text: 'scope&closures',
+              collapsed: true,
+            },
           ],
         },
         {

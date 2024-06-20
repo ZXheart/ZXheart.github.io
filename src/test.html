@@ -31,22 +31,17 @@
     </svg>
     <span class="bg-color">测试文本</span>
     <script>
-      function foo() {
-        console.log(this.a)
+      var o = { a: 3 }
+      function bar(fn, ...arg) {
+        fn(arg)
       }
-      var obj1 = {
-        a: 1,
-        foo: foo,
-      }
-      var obj2 = {
-        a: 2,
-        foo: foo,
-      }
-      obj1.foo() // 1
-      obj2.foo() // 2
-
-      obj1.foo.call(obj2) //2
-      obj2.foo.call(obj1) //1
+      bar(
+        function (...arg) {
+          console.log(this.a, arg)
+        }.bind(o, 'ha ha', 'xi xi'),
+        'wa wa',
+        'wo wo'
+      )
     </script>
   </body>
 </html>
