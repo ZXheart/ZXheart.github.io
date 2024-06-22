@@ -31,17 +31,8 @@
     </svg>
     <span class="bg-color">测试文本</span>
     <script>
-      var o = { a: 3 }
-      function bar(fn, ...arg) {
-        fn(arg)
-      }
-      bar(
-        function (...arg) {
-          console.log(this.a, arg)
-        }.bind(o, 'ha ha', 'xi xi'),
-        'wa wa',
-        'wo wo'
-      )
+      var arr = [1, 2, 3]
+      console.log(arr[Symbol.iterator])
     </script>
   </body>
 </html>
