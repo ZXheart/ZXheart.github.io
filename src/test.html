@@ -11,6 +11,24 @@
         background-position: 0 100%;
         background-size: 100% 8px;
       }
+      :root {
+        --primary-color-1: #f0f;
+        --primary-color-2: #0f0;
+        --primary-color-3: #0ff;
+      }
+      .paragraph-1 {
+        color: var(--primary-color-1);
+      }
+      .paragraph-2 {
+        color: var(--primary-color-2);
+      }
+      .paragraph-3 {
+        color: var(--primary-color-3);
+      }
+      .paragraph-4 {
+        --primary-color-1: #f00;
+        color: var(--primary-color-1);
+      }
     </style>
   </head>
   <body>
@@ -30,9 +48,47 @@
       <circle cx="25" cy="75" r="20" stroke="red" fill="transparent" stroke-width="5"></circle>
     </svg>
     <span class="bg-color">测试文本</span>
+    <div>
+      <p class="paragraph-1">paragraph - 1</p>
+      <p class="paragraph-2">paragraph - 2</p>
+      <p class="paragraph-3">paragraph - 3</p>
+      <p class="paragraph-4">paragraph - 4</p>
+    </div>
     <script>
-      var arr = [1, 2, 3]
-      console.log(arr[Symbol.iterator])
+      var Task = {
+        setID: function (ID) {
+          this.id = ID
+        },
+        outputID: function () {
+          console.log(this.id)
+        },
+      }
+      // 使 `XYZ` 委托至 `Task`
+      var XYZ = Object.create(Task)
+
+      XYZ.prepareTask = function (ID, Label) {
+        this.setID(ID)
+        this.label = Label
+      }
+      XYZ.outputTaskDetails = function () {
+        this.outputID()
+        console.log(this.label)
+      }
+      XYZ.prepareTask('123', 'label')
+      XYZ.outputTaskDetails()
+      console.log(XYZ)
+
+      function* makeRangeIterator(start = 0, end = Infinity, step = 1) {
+        let iterationCount = 0
+        for (let i = start; i < end; i += step) {
+          iterationCount++
+          yield i
+        }
+        return iterationCount
+      }
+      const generatorFn = makeRangeIterator(10, 20, 2)
+      console.log(generatorFn.next())
+      console.log(generatorFn.next())
     </script>
   </body>
 </html>
