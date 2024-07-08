@@ -3,9 +3,11 @@
 layout: home
 
 hero:
-  name: "Keep going"
-  text: "Force yourself to make a change"
-  tagline: If you can't fly then run, if you can't run then walk, if you can't walk then crawl, but whatever you do you have to keep moving forward.
+  name: 'Keep going'
+  text: 'Force yourself to make a change'
+  tagline:
+    If you can't fly then run, if you can't run then walk, if you can't walk then crawl, but whatever you do you have to
+    keep moving forward.
   actions:
     - theme: brand
       text: Markdown Examples
@@ -23,3 +25,17 @@ features:
     details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
 ---
 
+<style>
+    .dark-wrapper {
+    --at-apply: 'bg-soft-e ';
+  }
+  .dark-item {
+    --at-apply: 'bg-soft-a ';
+  }
+  .light-wrapper {
+    --at-apply: 'bg-#f6f6f6 ';
+  }
+  .light-item {
+    --at-apply: 'bg-#e7e8ec ';
+  }
+</style>
