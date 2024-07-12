@@ -1,3 +1,9 @@
+<script setup lang="ts">
+  import { useData, withBase } from 'vitepress'
+
+  const { isDark } = useData()
+</script>
+
 # :zzz:
 
 [《你不知道的 JavaScript》](https://github.com/getify/You-Dont-Know-JS/blob/1ed-zh-CN/this%20%26%20object%20prototypes/ch6.md)
@@ -42,7 +48,7 @@
 
 比方说我们有一个相似的任务（“XYZ”，“ABC”，等等）需要在我们的软件中建模。
 
-使用类，你设计这个场景的方式是：定义一个泛化的父类（基类）比如`Task`，为所有的“同类”任务定义共享的行为。然后，你定义子
+使用类，你设计这个场景的方式是：定义一个泛化的父类（基类）比如`Task`，为所有的“ 同类”任务定义共享的行为。然后，你定义子
 类`XYZ`和`ABC`，它们都继承自`Task`，每个都分别添加了特化的行为来处理各自的任务。
 
 **重要的是**，类设计模式将鼓励你发挥继承的最大功效，当你在`XYZ`任务中覆盖`Task`的某些泛化方法的定义时，你将会想利用方法
@@ -124,7 +130,7 @@ XYZ.outputTaskDetails = function () {
 在这段代码中，`Task`和`XYZ`不是类（也不是函数），它们**仅仅是对象**。`XYZ`通过`Object.create()`创建，来`[[Prototype]]`委
 托到`Task`对象。
 
-作为与面向类（也就是，OO —— object oriented）的对比，我称这种风格的代码为“OLOO”（object linked to other objects（链接到
+作为与面向类（也就是，OO —— object oriented）的对比，我称这种风格的代码为 “OLOO”（object linked to other objects（链接到
 其他对象的对象））。所有我们*真正*关心的是，对象`XYZ`委托到对象`Task`（对象`ABC`也一样）。
 
 在 JS 中，`[[Prototype]]`机制将**对象**链接到其他**对象**。无论你多么想说服自己这不是真的，JS 没有像“类”那样的抽象机制。
@@ -136,13 +142,230 @@ XYZ.outputTaskDetails = function () {
    托引入时，**你想使状态保持在委托者上**（`XYZ`，`ABC`），不是在委托上（`Task`）。
 
 2. 在类的设计模式中，我们故意在父类（`Task`）和子类（`XYZ`）上采用相同的命名`outputTask`，以至于我们可以利用覆盖（多态）
-   。在委托的行为中，我们反其道而行之：**我们尽一切可能避免在[[Prototype]]链的不同层级上给出相同的命名**（称为“遮蔽”——见
-   第五章），因为这些命名冲突会导致尴尬/脆弱的语法来消除引用的歧义（见第四章），而我们想避免它。这种设计模式不那么要求那
-   些倾向于被覆盖的泛化的方法名，而是要求针对每个对象的*具体*行为类型给出更具描述性的方法名。**这实际上会产生更容易理解/
-   维护的代码**，因为方法名（不仅在定义的位置，而是扩散到其他代码中）变得更加明白（代码即文档）。
+   。在委托的行为中，我们反其道而行之：**我们尽一切可能避免在[[Prototype]]链的不同层级上给出相同的命名**（称为 “遮蔽”——
+   见第五章），因为这些命名冲突会导致尴尬/脆弱的语法来消除引用的歧义（见第四章），而我们想避免它。这种设计模式不那么要求
+   那些倾向于被覆盖的泛化的方法名，而是要求针对每个对象的*具体*行为类型给出更具描述性的方法名。**这实际上会产生更容易理
+   解/ 维护的代码**，因为方法名（不仅在定义的位置，而是扩散到其他代码中）变得更加明白（代码即文档）。
 
 3. `this.setID(ID);`位于对象`XYZ`的一个方法内部，它首先在`XYZ`上查找`setID(..)`，但因为它不能在`XYZ`上找到这个名称的方法
    ，`[[Prototype]]`委托意味着它可以沿着链接到`Task`来寻找`setID()`，这样当然就能找到了。另外，由于调用点的隐含`this`绑
    定规则（见第二张），当`setID()`运行时，即便方法是在`Task`上找到的，这个函数调用的`this`绑定依然是我们期望和想要
    的`XYZ`。我们在代码稍后的`this.outputID()`中也看到了同样的事情。换句话说，我们可以使用存在于`Task`上的泛化工具
    与`XYZ`互动，因为`XYZ`可以委托至`Task`。
+
+**行为委托**意味着：在某个对象（`XYZ`）的属性或方法没能在这个对象（`XYZ`）上找到时，让这个对象（`XYZ`）为属性和方法引用
+提供一个委托（`Task`）。
+
+这是一个*极其强大*的设计模式，与父类和子类，继承，多态等有很大的不同。与其在你的思维中纵向地，从上面父类到下面子类地组织
+对象，你应当并列的，对等地考虑对象，而且对象间拥有方向性的委托链接。
+
+::: tip
+
+委托更适于作为内部实现的细节，而不是直接暴露在 API 接口的设计中。在上面的例子中，我们的 API 设计没必要有意地让开发者调
+用`XYZ.setID(..)` （当然我们可以！）。我们以某种隐藏的方式将委托作为我们 API 的内部细节，即`XYZ.prepareTask(..)`委托
+到`Task.setID(..)`。详细的内容，参照第五章的“链接作为候补？”中的讨论。
+
+:::
+
+#### 相互委托（不允许）
+
+你不能在两个或多个对象间相互地委托（双向的）对方来创建一个*循环*。如果你使`B`链接到`A`，然后试着让`A`链接到`B`，那么你将
+得到一个错误。
+
+这样的事情不被允许有些可惜（不是非常令人惊讶，但稍稍有些恼人）。如果你制造一个在任意一方都不存在的属性/方法引用，你就会
+在`[[Prototype]]`上得到一个无限递归的循环。但如果所有的引用都严格存在，那么`B`就可以委托至`A`，或相反，而且它可以工作。
+这意味着你可以为了多种任务用这两个对象相互委托至对方。有一些情况这可能会有用。
+
+但它不被允许是因为引擎的实现者发现，在设置时检查（并拒绝！）无限循环引用一次，要比每次你在一个对象上查询属性时都做相同检
+查的性能要高。
+
+#### 调试
+
+我们将简单地讨论一个可能困扰开发者的微妙的细节。一般来说，JS 语言规范不会控制浏览器开发者工具如何向开发者表示指定的值/结
+构，所以每种浏览器/引擎都自由地按需要解释这个事情。因此，浏览器/工具*不总是意见统一*。特别地，我们在要考察的行为就是在当
+前仅在 Chrome 的开发者工具中观察到的。
+
+考虑到这段传统的“类构造器”风格的 JS 代码，正如它将在 Chrome 开发者工具*控制台*中出现的：
+
+```javascript
+function Foo() {}
+var a = new Foo()
+a // Foo {}
+```
+
+让我们看一下这个代码段最后一行：对表达式`a`进行求知的输出，打印`foo{}`。如果你在 FireFox 中试用同样的代码，你很可能会看
+到`Object {}`。为什么会有不同？这些输出意味着什么？
+
+Chrome 实质上在说“{}是一个由名为‘Foo’的函数创建的空对象”。FireFox 在说：“{}是一个由 Object 普通构建的空对象”。这种微妙的
+区别是因为 Chrome 在像一个*内部属性*一样，动态跟踪执行创建的实际方法的名称，而其他浏览器不会跟踪这样的附加信息。
+
+试图用 JS 机制来解释它很吸引人：
+
+```javascript
+function Foo() {}
+var a = new Foo()
+a.constructor // Foo(){}
+a.constructor.name // "Foo"
+```
+
+那么，Chrome 就是通过简单地查看对象的`.constructor.name`来输出“Foo”的？令人费解的是，答案既是“是”也是“不”。
+
+考虑下面的代码：
+
+```javascript
+function Foo() {}
+var a = new Foo()
+Foo.prototype.constructor = function GotCha() {}
+a.constructor // GotCha(){}
+a.constructor.name // “GotCha”
+
+a // Foo{}
+```
+
+即便我们将`a.constructor.name`合法地改变为其他的东西（“GotCha”），Chrome 控制台依旧使用名称“Foo”。那么，说明前面问题（它
+使用`.constructor.name`吗？）的答案是**不**，它一定在内部追踪其他的什么东西。
+
+但是，且慢！让我们看看这种行为如何与 OLOO 风格的代码一起工作：
+
+```javascript
+var Foo = {}
+var a = Object.create(Foo)
+a // Object {}
+
+Object.defineProperty(Foo, 'constructor', {
+  enumerable: false,
+  value: function GotCha() {},
+})
+a // GotCha {}
+```
+
+啊哈！GoaCha，Chrome 的控制台**确实**寻找并使用了`.constructor.name`。实际上，就在写这本书的时候，这个行为被认定为是
+Chrome 的一个 Bug，而且就在你读到这里的时候，他可能已经被修复了。所以你可能已经看到了被修改过的`a // Object{}`。
+
+这个 Bug 暂且不论，Chrome 执行的（刚刚在代码段中展示的）“构造器名称”内部追踪（目前仅用于调试输出的目的），是一个仅在
+Chrome 内部存在的扩张行为，它已经超出了 JS 语言规范要求的范围。
+
+如果你不使用“构造器”来制造你的对象，就像我们在本章的 OLOO 风格代码中不鼓励的那样，那么你将会得到一个 Chrome 不会为其追踪
+内部“构造器名称”的对象，所以这样的对象将正确地仅仅被输出“Object{}”，意味着“从 Object()构建生成的对象”。
+
+**不要认为**这代表一个 OLOO 风格代码的缺点，当你用 OLOO 编码而且用行为委托作为你的设计模式时，谁“创建了”（也就是，*那个
+函数*被和`new`一起调用了？）一些对象是一个无关的细节。Chrome 特殊的内部“构造器名称”追踪仅仅在你完全接受“类风格”编码时才
+有用，而在你接受 OLOO 委托时是没有意义的。
+
+### 思维模型比较
+
+现在你至少在理论上可以看到“类”和“委托”设计模式的不同了，让我们看看这些设计模式在我们用来推导我们代码的思维模型上的含义。
+
+我们将查看一些更加理论上的（“Foo”，“Bar”）代码，然后比较两种方法（OO vs. OLOO）的代码实现。第一段代码使用经典的（“原型的
+”）OO 风格：
+
+```javascript
+function Foo(who) {
+  this.me = who
+}
+Foo.prototype.identify = function () {
+  return 'I am ' + this.me
+}
+
+function Bar(who) {
+  Foo.call(this, who)
+}
+Bar.prototype = Object.create(Foo.prototype)
+Bar.prototype.speak = function () {
+  alert('Hello, ' + this.identify() + '.')
+}
+
+var b1 = new Bar('b1')
+var b2 = new Bar('b2')
+
+b1.speak()
+b2.speak()
+```
+
+父类`Foo`，被子类`Bar`继承，之后`Bar`被初始化两次：`b1`和`b2`。我们得到的是`b1`委托至`Bar.prototype`，`Bar.prototype`委
+托至`Foo.prototype`。这对你来说应当看起来十分熟悉。没有太具开拓性的东西发生。
+
+现在，让我们使用 OLOO 风格的代码**实现完全相同的功能**：
+
+```javascript
+var Foo = {
+  init(who) {
+    this.me = who
+  },
+  identity() {
+    return 'I am' + this.me
+  },
+}
+
+var Bar = Object.create(Foo)
+
+Bar.speak = function () {
+  alert('Hello,' + this.identify() + '.')
+}
+
+var b1 = Object.create(Bar)
+b1.init('b1')
+var b2 = Object.create(Bar)
+b2.init('b2')
+
+b1.speak()
+b2.speak()
+```
+
+我们利用了完全相同的从`Bar`到`Foo`的`[[Prototype]]`委托，正如我们在前一个代码段中`b1`，`Bar.prototype`，
+和`Foo.prototype`之间那样，**我们仍然有三个对象链接在一起**。
+
+但重要的是，我们极大地简化了发生的*所有其他事项*，因为我们现在仅仅建立了相互链接的**对象**，而不需要所有其他讨厌且困惑的
+看起来像类（但动起来不像）的东西，还有构造器，原型和`new`调用。
+
+问问你自己：如果我能用 OLOO 风格代码得到我用“类”风格代码得到的一样的东西，但 OLOO 更简单而且需要考虑的事情更少，**OLOO
+不是更好吗？**
+
+让我们讲解一下这两个代码段见设计的思维模型。
+
+首先，类风格的代码段意味着这样的实体与它们的关系的思维模型：
+
+<!-- ![OO-full](/javascript-img/book/fig4.png) -->
+<img src="/javascript-img/book/fig4.png" alt="OO-full" :class="[isDark?'light-wrapper':'']" >
+
+实际上，这有点儿不公平/误导，因为它展示了许多额外的，你在*技术上*一直不需要知道（虽然你*需要*理解它）的细节。一个关键是
+，它是一系列十分复杂的关系。但另一个关键是：如果你花时间来沿着这些关系的箭头走，在 JS 的机制中**有数量惊人的内部统一
+性**。
+
+例如，JS 函数可以访问`call(..)`，`apply(..)`和`bind(..)`（见第二章）的能力是因为函数本身就是对象，而函数对象还拥有一
+个`[[Prototype]]`链接，链到`Function.prototype`对象，它定义了那些任何函数对象都可以委托到的默认方法。JS 可以做这些事情
+，_你也能！_
+
+好了，现在让我们看一个这张图的*稍稍*简化的版本，用它来进行比较稍微“公平”一点 —— 它仅展示了*相关*的实体与关系。
+
+<!-- ![OO-simplify](/javascript-img/book/fig5.png) -->
+<img src="/javascript-img/book/fig5.png" alt="OO-simplify" :class="[isDark?'light-wrapper':'']" >
+
+仍然非常复杂，对吧？虚线描绘了当你在`Foo.prototype`和`Bar.prototype`间建立“继承”时的隐含关系，而且还没有*修复* **丢失
+的**`.constructor`属性引用（见第五章“复活构造器”）。即便将虚线去掉，每次你与对象链接打交道时，这个思维模型依然要变很多可
+怕的戏法。
+
+现在，让我们看看 OLOO 风格代码的思维模型：
+
+<!-- ![OLOO](/javascript-img/book/fig6.png) -->
+<img src="/javascript-img/book/fig6.png" alt="OLOO" :class="[isDark?'light-wrapper':'']" >
+
+正如你比较他们所得到的，十分明显，OLOO 风格的代码*需要关心的东西少太多了*，因为 OLOO 风格代码接受了**事实**：我们唯一需
+要真正关心的事情是**连接到其他对象的对象**。
+
+所有其他“类”的烂设计用一种令人费解而且复杂的方式得到相同的结果。去掉那些东西，事情就变得简单得多（还不会失去任何功能）。
+
+## Classes vs. Objects
+
+我们已经看到了各种理论的探索和“类”与“行为委托”的思维模型的比较。现在让我们来看看更具体的代码场景，来展示你如何实时应用这
+些想法。
+
+我们将首先讲解一种在前端网页开发中的典型场景：建造 UI 部件（按钮，下拉列表等等）。
+
+### widget “类”
+
+<style>
+  .light-wrapper{
+    background: #f6f6f6;
+  }
+</style>
