@@ -760,7 +760,7 @@ console.log(myObj.a) // 4
 
 ### 存在性（existence）
 
-我们[早前](./02-object#get)看到，像`myObj.a`这样的属性访问可能会得到一个`undefined`值，无论它是明确存储着`undefined`还是
+我们[早前](./03-object#get)看到，像`myObj.a`这样的属性访问可能会得到一个`undefined`值，无论它是明确存储着`undefined`还是
 属性`a`根本就不存在。那么，如果这两种情况的值相同，我们还区分它们呢？
 
 我们可以查询一个对象是否拥有特定的属性。而*不必*取得哪个属性的值：
@@ -801,7 +801,7 @@ console.log('1' in arr) // true
 
 #### 枚举（enumeration）
 
-[先前](02-object#可枚举性-enumerable)，在学习`enumerable`属性描述符性质时，我们简单地解释了“可枚举性（enumerability）”的
+[先前](03-object#可枚举性-enumerable)，在学习`enumerable`属性描述符性质时，我们简单地解释了“可枚举性（enumerability）”的
 含义。现在，让我们来更加详细地重新讲解它。
 
 ```javascript
