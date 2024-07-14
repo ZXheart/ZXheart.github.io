@@ -364,6 +364,341 @@ b2.speak()
 
 ### widget “类”
 
+因为你可能还不是如此地习惯于 OO 设计模式，你很可能会立即考虑这个问题：一个父类（也许称为`Widget`）拥有所有共同的基本部件
+行为，然后衍生的子类拥有具体的部件类型（比如`Button`）。
+
+::: tip
+
+为了 DOM 和 CSS 的操作，我们将在这里使用 JQuery，这仅仅是因为对于我们现在的讨论，它不是一个我们真正关心的细节。这些代码
+中你不关心你用哪个 JS 框架（JQuery，Dojo，YUI 等等）来解决如此无趣的问题。
+
+:::
+
+让我们来看看，在没有任何“类”帮助库或语法的情况下，我们如何使用经典风格 JS 来实现“类”设计：
+
+```javascript
+// 父类
+function Widget(width, height) {
+  this.width = width || 50
+  this.height = height || 50
+  this.$elem = null
+}
+Widget.prototype.render = function ($where) {
+  if (this.$elem) {
+    this.$elem
+      .css({
+        width: this.width + 'px',
+        height: this.height + 'px',
+      })
+      .appendTo($where)
+  }
+}
+
+// 子类
+function Button(width, height, label) {
+  Widget.call(this, width, height)
+  this.label = label || 'Default'
+
+  this.$elem = $('<button>').text(this.label)
+}
+
+// 使 `Button` 继承 `Widget`
+Button.prototype = Object.create(Widget.prototype)
+
+// 覆盖“继承来的” render(..)
+Button.prototype.render = function ($where) {
+  // "supper"调用
+  Widget.prototype.render.call(this, $where)
+  this.$elem.click(this.onClick.bind(this))
+}
+
+Button.prototype.onClick = function (evt) {
+  console.log("Button '" + this.label + "' clicked!")
+}
+
+$(document).ready(function () {
+  var $body = $(document.body)
+  var btn1 = new Button(125, 30, 'Hello')
+  var btn2 = new Button(150, 40, 'World')
+
+  btn1.render($body)
+  btn2.render($body)
+})
+```
+
+OO 设计模式告诉我们要在父类中声明一个基础`render(..)`。之后在我们的子类中覆盖它，但不是完全替代它，而是用按钮特定的行为
+增强这个基础功能。
+
+::: tip
+
+*显式假象多态*的丑态，`Widget.call`和`Widget.prototype.render.call`引用是为了伪装从“子类”方法得到“父类”基础方法支持的
+“super”调用。呃。
+
+:::
+
+#### ES6 `class`语法糖
+
+我们会在附录 A 中讲解 ES6 的`class`语法糖，但是让我们演示一下我们如何用`class`来实现相同的代码。
+
+```javascript
+class Widget {
+  constructor(width = 50, height = 50) {
+    this.width = width
+    this.height = height
+    this.$elem = null
+  }
+  render($where) {
+    if (this.$elem) {
+      this.$elem
+        .css({
+          width: this.width + 'px',
+          height: this.height + 'px',
+        })
+        .appendTo($where)
+    }
+  }
+}
+
+class Button extends Widget {
+  constructor(width, height, label = 'Default') {
+    super(width, height)
+    this.label = label
+    this.$elem = $('<button>').text(this.label)
+  }
+  render($where) {
+    super.render($where)
+    this.$elem.click(this.onClick.bind(this))
+  }
+  onClick(evt) {
+    console.log("Button '" + this.label + "' clicked!")
+  }
+}
+
+$(document).ready(function () {
+  var $body = $(document.body)
+  var btn1 = new Button(125, 30, 'Hello')
+  var btn2 = new Button(150, 40, 'World')
+
+  btn1.render($body)
+  btn2.render($body)
+})
+```
+
+毋庸置疑，通过使用 ES6 的`class`，许多前面经典方法中难看的语法被改善了。`super(..)`的存在看起来非常适宜（但当你深入挖掘
+它时，不全是好事！）
+
+除了语法上的改进，**这些都不是*真正的*类**，因为它们仍然工作在`[[Prototype]]`机制之上。它们仍然会受到思维模型不匹配的拖
+累，就像我们在第四，第五章中，和直到现在探索的那样。附录 A 将会详细讲解 ES6`class`语法和它的含义。我们将会看到为什么解决
+语法上的小问题不会实质上解决我们在 JS 中的类的困惑，虽然它做出了勇敢的努力假装解决了问题！
+
+无论你是使用经典的原型语法还是新的 ES6 语法糖，你依然选择了使用“类”来对问题（UI 部件）进行建模。正如我们前面几章试着展示
+的，在 JS 中做这个选择会带给你额外的头疼和思维上的弯路。
+
+### 委托`Widget`对象
+
+这是我们更简单的`Widget`/`Button`例子，使用了**OLOO**风格委托：
+
+```javascript
+var Widget = {
+  init: function (width, height) {
+    this.width = width || 50
+    this.height = height || 50
+    this.$elem = null
+  },
+  insert: function ($where) {
+    if (this.$elem) {
+      this.$elem
+        .css({
+          width: this.width + 'px',
+          height: this.height + 'px',
+        })
+        .appendTo($where)
+    }
+  },
+}
+
+var Button = Object.create(Widget)
+
+Button.setup = function (width, height, label) {
+  // 委托调用
+  this.init(width, height)
+  this.label = label || 'Default'
+  this.$elem = $('<button>').text(this.label)
+}
+Button.build = function ($where) {
+  // delegated call
+  this.insert($where)
+  this.$elem.click(this.onClick.bind(this))
+}
+Button.onClick = function (evt) {
+  console.log("Button '" + this.label + "' clicked!")
+}
+
+$(document).ready(function () {
+  var $body = $(document.body)
+  var btn1 = Object.create(Button)
+  btn1.setup(125, 30, 'Hello')
+
+  var btn2 = Object.create(Button)
+  btn2.setup(150, 40, 'World')
+
+  btn1.build($body)
+  btn2.build($body)
+})
+```
+
+使用这种 OLOO 风格的方法，我们不认为`Widget`是一个父类而`Button`是一个子类，`Widget`**只是一个对象**和某种具体类型的部件
+也许想要的代理到的工具的合集，而且`Button`**也只是一个独立的对象**（当然，带有委托至`Widget`的链接！）
+
+从设计模式的角度来看，我们**没有**像类的方法建议的那样，在两个对象中共享相同的`render(..)`方法名称，而是选择了更能描述每
+个特定任务的不同的名称。同样的原因，*初始化*方法被称为`init(..)`和`setup(..)`。
+
+不仅委托设计模式建议使用不同而且更具描述性的名称，而且在 OLOO 中这样做会避免难看的显式假象多态调用，正如你可以通过简单，
+相对的`this.init(..)`和`this.insert(..)`委托调用看到的。
+
+语法上，我们也没有任何构造器，`.prototype`或者`new`出现，它们事实上是不必要的设计。
+
+现在，如果你再细心考察一下，你可能会注意到之前仅有一个调用（var btn1 = new Button(..)），而现在有了两个
+（`var btn1 = Object.create(Button)`和`btn1.setup(..)`）。这猛地看起来像是一个缺点（代码变多了）。
+
+然而，即便是这样的事情，和经典圆形风格比起来也是**OLOO 风格代码的有点**。为什么？
+
+用类的构造器，你“强制”（不完全是这样，但是被强烈建议）构建和初始化在同一个步骤中进行。然而，有许多种情况，能够将这两步分
+开做（就像你在 OLOO 中做的）更灵活。
+
+举个例子，我们假定你在程序的最开始，在一个池中创建所有的实例，但你等到在它们被从池中找到并使用之前再用指定的设置初始化它
+们。我们的例子中，这两个调用紧挨在一起，当然它们也可以按需要发生在非常不同的时间和代码中非常不同的部分。
+
+OLOO 对关注点分离原则有*更好*的支持，也就是创建和初始化没有必要合并在同一个操作中。
+
+## 更简单的设计
+
+OLOO 除了提供上面的更简单（而且更灵活！）的代码之外，行为委托作为一个模式实际上会带来更简单的代码架构。让我们讲解最后一
+个例子来说明 OLOO 是如何简化你的整体设计的。
+
+这个场景中我们将讲解两个控制器对象，一个用来处理网页的登录 form（表单），另一个实际处理服务器的认证（通信）。
+
+我们需要帮助工具来进行与服务器的 Ajax 通信。我们将使用 JQuery（虽然其他的框架都可以），因为它不仅为我们处理 Ajax，而且还
+返回一个类似 Promise 的应答，这样我们就可以在代码中使用`.then(..)`来监听这个应答。
+
+::: tip
+
+我们不会在这里讲到 Promise，但我们会在以后的\*你不知道的 JS\*\*系列中讲到。
+
+:::
+
+根据典型的类的设计模式，我们在一个叫做`Controller`的类中将任务分解为基本功能，之后我们会衍生出两个子类
+，`LoginController`和`AuthController`，它们都继承自`Controller`而且特化某些行为。
+
+```javascript
+// 父类
+function Controller() {
+  this.errors = []
+}
+Controller.prototype.showDialog = function (title, msg) {
+  // 细节
+}
+Controller.prototype.success = function (msg) {
+  this.showDialog('Success', msg)
+}
+Controller.prototype.failure = function (err) {
+  this.errors.push(err)
+  this.showDialog('Error', err)
+}
+```
+
+```javascript
+//子类
+function LoginController() {
+  Controller.call(this)
+}
+// 将子类链接到父类
+LoginController.prototype = Object.create(Controller.prototype)
+LoginController.prototype.getUser = function () {
+  return document.getElementById('Login_username').value
+}
+LoginController.prototype.getPassword = function () {
+  return document.getElementById('Login_password').value
+}
+LoginController.prototype.validateEntry = function (user, pw) {
+  user = user || this.getUser()
+  pw = pw || this.getPassword()
+  if (!(user && pw)) {
+    return this.failure('Please enter a username & password!')
+  } else if (pw.length < 5) {
+    return this.failure('Password must be 5+ characters!')
+  }
+  return true
+}
+// 覆盖来扩展基本的`failure()`
+LoginController.prototype.failure = function (err) {
+  Controller.prototype.failure.call(this, 'Login invalid:' + err)
+}
+```
+
+```javascript
+// 子类
+function AuthController(login) {
+  Controller.call(this)
+  // 除了继承外，我们还需要合成
+  this.login = login
+}
+// 将子类链接到父类
+AuthController.prototype = Object.create(Controller.prototype)
+AuthController.prototype.server = function (url, data) {
+  return $.ajax({
+    url: url,
+    data: data,
+  })
+}
+AuthController.prototype.checkAuth = function () {
+  var user = this.login.getUser()
+  var pw = this.login.getPassword()
+  if (this.login.validateEntry(user, pw)) {
+    this.server('/check-auth', {
+      user: user,
+      pw: pw,
+    })
+      .then(this.success.bind(this))
+      .fail(this.failure.bind(this))
+  }
+}
+// 覆盖以扩展基本的`success()`
+AuthController.prototype.success = function () {
+  // "super"调用
+  Controller.prototype.success.call(this, 'Authenticated!')
+}
+// 覆盖以扩展基本的`failure()`
+AuthController.prototype.failure = function (err) {
+  // "super"调用
+  Controller.prototype.failure.call(this, 'Auth Failed:' + err)
+}
+```
+
+```javascript
+var auth = new AuthController(new LoginController())
+auth.checkAuth()
+```
+
+我们有所有控制器分享的基本行为，它们是`success(..)`，`failure(..)`和`showDialog(..)`。我们的子
+类`LoginController`和`AuthController`覆盖了`failure(..)`和`success(..)`来增强基本类的行为。还要注意的是
+，`AuthController`需要一个`LoginController`实力来与登录 form 互动，所以它变成了一个数据属性成员。
+
+另外一件要提的事情是，我们选择一些*合成*散布在继承的顶端。`AuthController`需要知道`LoginController`，所以我们初始化它
+（`new loginController()`），并用一个称为`this.login`的类属性成员来引用它，这样`AuthController`才可以调
+用`LoginController`上的行为。
+
+::: tip
+
+这里可能会存在一丝冲动，就是使`AuthController`继承`LoginController`，或者反过来，这样的话我们就会通过继承链得到*虚拟合
+成*。但是这是一个非常清晰的例子，表明对这个问题来讲，将类继承作为模型有什么问题，因
+此`AuthController`和`LoginController`都不特化对方的行为，所以它们之间的继承没有太大的意义，除非类是你唯一的设计模式。一
+次相反的是，我们在一些简单的合成中分层，然后它们就可以合作了，同时她俩都享有继承自父类`Controller`的好处。
+
+:::
+
+如果你熟悉面向类（OO）的设计，这都应该看起来十分熟悉和自然。
+
 <style>
   .light-wrapper{
     background: #f6f6f6;
