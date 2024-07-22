@@ -699,6 +699,71 @@ auth.checkAuth()
 
 如果你熟悉面向类（OO）的设计，这都应该看起来十分熟悉和自然。
 
+### 去类化
+
+但是，我们真的需要用一个父类，两个字类，和一些合成来对这个问题建立模型吗？有办法利用 OLOO 风格的委托得到*简单得多*的设计
+吗？**有的！**
+
+```javascript
+var LoginController = {
+  errors: [],
+  getUser: function () {
+    return document.getElementById('Login_username').value
+  },
+  getPassword: function () {
+    return document.getElementById('Login_password').value
+  },
+  validateEntry: function (user, pw) {
+    user = user || this.getUser()
+    pw = pw || this.getPassword()
+    if (!(user && pw)) {
+      return this.failure('Please enter a username & password!')
+    } else if (pw.length < 5) {
+      return this.failure('Password must be 5+ characters!')
+    }
+    return true
+  },
+  showDialog: function (title, msg) {
+    /*细节*/
+  },
+  failure: function (err) {
+    this.errors.push(err)
+    this.showDialog('Error', err)
+  },
+}
+```
+
+```javascript
+var AuthController = Object.create(LoginController)
+
+AuthController.errors = []
+AuthController.checkAuth = function () {
+  var user = this.getUser()
+  var pw = this.getPassword()
+
+  if (this.validateEntry(user, pw)) {
+    this.server('/check-auth', {
+      user: user,
+      pw: pw,
+    })
+      .then(this.success.bind(this))
+      .fail(this.failure.bind(this))
+  }
+}
+AuthController.server = function (url, data) {
+  return $.ajax({
+    url: url,
+    data: data,
+  })
+}
+AuthController.accepted = function () {
+  this.showDialog('Success', 'Authenticated!')
+}
+AuthController.rejected = function (err) {
+  this.failure('Auth Failed:' + err)
+}
+```
+
 <style>
   .light-wrapper{
     background: #f6f6f6;
