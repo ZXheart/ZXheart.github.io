@@ -690,8 +690,8 @@ auth.checkAuth()
 
 这里可能会存在一丝冲动，就是使`AuthController`继承`LoginController`，或者反过来，这样的话我们就会通过继承链得到*虚拟合
 成*。但是这是一个非常清晰的例子，表明对这个问题来讲，将类继承作为模型有什么问题，因
-此`AuthController`和`LoginController`都不特化对方的行为，所以它们之间的继承没有太大的意义，除非类是你唯一的设计模式。一
-次相反的是，我们在一些简单的合成中分层，然后它们就可以合作了，同时她俩都享有继承自父类`Controller`的好处。
+此`AuthController`和`LoginController`都不特化对方的行为，所以它们之间的继承没有太大的意义，除非类是你唯一的设计模式。与
+此相反的是，我们在一些简单的合成中分层，然后它们就可以合作了，同时它俩都享有继承自父类`Controller`的好处。
 
 :::
 
@@ -744,8 +744,8 @@ AuthController.checkAuth = function () {
       user: user,
       pw: pw,
     })
-      .then(this.success.bind(this))
-      .fail(this.failure.bind(this))
+      .then(this.accepted.bind(this))
+      .fail(this.rejected.bind(this))
   }
 }
 AuthController.server = function (url, data) {
@@ -761,6 +761,274 @@ AuthController.rejected = function (err) {
   this.failure('Auth Failed:' + err)
 }
 ```
+
+因为`AuthController`只是一个对象（`LoginController`也是），我们不需要初始化（比如`new AuthController()`）就能执行我们的
+任务。所有我们要做的是：
+
+```javascript
+AuthController.checkAuth()
+```
+
+当然，通过 OLOO，如果你确实需要在委托链上创建一个或多个附加的对象时也很容易，而且仍然不需要任何像类实例化那样的东西：
+
+```javascript
+var controller1 = Object.create(AuthController)
+var controller2 = Object.create(AuthController)
+```
+
+使用行为委托，`AuthController`和`LoginController`**仅仅是对象**，互相*水平*对等的，而且没有被安排或关联成面向类中的父与
+子。我们有些随意地让`AuthController`委托至`LoginController`————相反方向的委托也同样是有效的。
+
+第二个代码段的重要要点是，我们只拥有两个实体（`LoginController`和`AuthController`），而**不是之前的三个**。
+
+我们不需要一个基本的`Controller`类来在两个子类间“分享”行为，因为委托是一种可以给我们所需要功能的，足够强大的机制。同时，
+就像之前注意的，我们也不需要实例化我们的对象来使它们工作，因为这里没有类，**只有对象自身**。另外，这里不需要*合成*作为委
+托来给两个对象*差异化*地合作的能力。
+
+最后，由于没有让名称`success(..)`和`failure(..)`在两个对象上相同，我们避开了面向类的设计的多态陷阱：它将会需要难看的假想
+多态。相反，我们在`AuthController`上称它们为`accepted(..)`和`rejected(..)`————对于它们的具体任务来说，稍稍更具描述性的名
+称。
+
+**最终结论：**我们最终得到了相同的结果，但是用了（显著的）更简单的设计。这就是 OLOO 风格代码和*行为委托*设计模式的力量。
+
+## 更好的语法
+
+一个使 ES6`class`看似如此诱人的更好的东西是（见附录 A 来了解为什么要避开它！），声明类方法的速记语法：
+
+```javascript
+class Foo {
+  methodName() {}
+}
+```
+
+我们从声明中扔掉了单词`function`，这使所有的 JS 开发者欢呼！
+
+你可能已经注意到，而且为此感到沮丧：上面推荐的 OLOO 语法出现了许多`function`，这看起来像是对 OLOO 简化目标的诋毁。**但它
+不是！**
+
+在 ES6 中，我们可以在任意字面对象中使用*简约方法声明*，所以一个 OLOO 风格的对象可以用这种方式声明（与`class`语法中相同的
+语法糖）：
+
+```javascript
+var LoginController = {
+  errors: [],
+  getUser() {}, // 看，没有`function`!
+  getPassword() {},
+  // ...
+}
+```
+
+唯一的区别是字面对象的元素间仍然需要`,`分隔符，而`class`语法不必如此。这是在整件事情上很小的让步。
+
+还有，在 ES6 中，一个你使用的更笨重的语法（比如`AuthController`的定义中）：你一个一个地给属性赋值而不是用字面对象，可以
+改写为使用字面对象（于是你可以使用简约方法），而且你可以使用`Object.setPrototypeOf(..)`来修改`[[Prototype]]`，像这样：
+
+```javascript
+// 使用更好的字面对象语法和简写方式！
+var AuthController = {
+  errors: [],
+  checkAuth() {},
+  server(url, data) {},
+  // ...
+}
+// 现在，链接`AuthController`委托至`LoginController`
+Object.setPrototypeOf(AuthController, LoginController)
+```
+
+ES6 中的 OLOO 风格，与简明方法一起，变得比它以前**有好的多**（即便在以前，它也比经典的原型风格代码简单好看的多）。**你不
+必非得选用类**（复杂性）来得到干净漂亮的对象语法！
+
+### 没有词法
+
+简约方法确实有一个缺点，一个重要的细节。考虑这段代码：
+
+```javascript
+var Foo = {
+  bar() {},
+  baz: function baz() {}, // 妈的，真神奇，几年了，第一次知道命名了属性名还可以再给函数一个名字（甚至函数名可以不同）
+}
+```
+
+这是去掉语法糖后，这段代码将如何工作：
+
+```javascript
+var Foo = {
+  bar: function () {},
+  baz: function baz() {},
+}
+```
+
+看到区别了？`bar()`的速记变成了一个附着在`bar`属性上的*匿名函数表达式*（`function()..`），因为函数对象本身没有名称标识符
+。和拥有词法名称标识符`baz`，附着在`.baz`属性上的手动指定的*命名函数表达式*（`function baz()..`）做个比较。
+
+那又怎么样？在“_你不知道的 JS_”系列的“_作用域与闭包_”这本书中，我们详细讲解了*匿名函数表达式*的三个主要缺点。我们简单地
+重复一下它们，以便于我们和简明方法相比较。
+
+一个匿名函数缺少`name`标识符：
+
+1. 使调试时的栈追踪变得困难
+2. 使自引用（递归，事件绑定等）变得困难
+3. 是代码（稍微）变得难于理解
+
+第一和第三条不适用于简明方法。
+
+虽然去掉语法糖使用*匿名函数表达式*一般会使栈追踪中没有`name`。简明方法在语言规范中被要求去设置相应的函数对象内部
+的`name`属性，所以栈追踪应当可以使用它（这是依赖于具体实现的，所以不能保证）。
+
+不幸的是，第二条**仍然是简明方法的一个缺陷**。它们不会有词法标识符用来自引用。考虑：
+
+```javascript
+var Foo = {
+  bar: function (x) {
+    if (x < 10) {
+      return Foo.bar(x * 2)
+    }
+    return x
+  },
+  baz: function baz(x) {
+    if (x < 10) {
+      return baz(x * 2)
+    }
+    return x
+  },
+}
+```
+
+在这个例子中上面的手动`Foo.bar(x * 2)`引用就足够了，但是在许多情况下，一个函数不一定能够这样做，比如使用`this`绑定，函数
+在委托中被分享到不同的对象，等等。你将会想要使用一个真正的自引用，而函数对象的`name`标识符是实现的最佳方式。
+
+只要小心简明方法的这个注意点，而且如果当你陷入缺少自引用的问题时，**仅仅为这个声明**放弃简明方法语法，取代以手动的*命名
+函数表达式*声明形式：`baz: function baz() {..}`
+
+## 自省
+
+如果你花了很长时间在面向类的编程方式（不管是 JS 还是其他的语言）上，你可能会对*类型自省*很熟悉：自行一个实例来找出它是什
+么*种类*的对象。在类的实例上进行*类型自省*的主要目的是根据*对象是如何创建的*来推断它的结构/能力。
+
+考虑这段代码，它使用`instanceof`（见第五章）来自省一个对象`a1`来推断它的能力：
+
+```javascript
+function Foo() {}
+Foo.prototype.something = function () {}
+var a1 = new Foo()
+// 稍后
+if (a1 instanceof Foo) {
+  a1.something()
+}
+```
+
+因为`Foo.prototype`（不是`Foo`!）在`a1`的`[[Prototype]]`链上（见第五章），`instanceof`操作符（使人困惑的）假装告诉我
+们`a1`是一个`Foo`“类”的实例。有了这个知识，我们假定`a1`有`Foo`“类”中描述的能力。
+
+当然，这里没有`Foo`类，只有一个普通的函数`Foo`，它恰好拥有一个引用指向一个随意的对象（`Foo.prototype`），而`a1`恰好委托
+连接至这个对象。通过它的语法，`instanceof`假装检查了`a1`和`Foo`之间的关系，但它实际上告诉我们的是`a1`和`Foo.prototype`（
+这个随意被引用的对象）是否有关联。
+
+`instanceof`在语义上的混乱（和间接）意味着，要使用以`instanceof`为基础的自省来查询对象`a1`是否与讨论中的对象有关联，
+你*不得不*拥有一个持有对这个对象引用的函数————你不能直接查询这两个对象是否有关联。
+
+回想本章前面的抽象`Foo`/`bar`/`b1`例子，我们在这里缩写一下：
+
+```javascript
+function Foo() {}
+Foo.prototype.something = function () {}
+
+function Bar() {}
+Bar.prototype = Object.create(Foo.prototype)
+
+var b1 = new Bar('b1')
+```
+
+为了在这个例子中的实体上进行*类型自省*，使用`instanceof`和`.prototype`语义，这里有各种你可能需要实施的检查：
+
+```javascript
+// `Foo`和`Bar`互相的联系
+Bar.prototype instanceof Foo // true
+Object.getPrototypeOf(Bar.prototype) === Foo.prototype // true
+// isPrototypeOf()检查一个对象是否存在于另一个对象的原型链中。调用无关先后顺序
+Foo.prototype.isPrototypeOf(Bar.prototype) // true
+
+// `b1` 与 `Foo` 和 `Bar`的联系
+b1 instanceof Foo // true
+b1 instanceof Bar // true
+Object.getPrototypeOf(b1) === Bar.prototype // true
+Foo.prototype.isPrototypeOf(b1) // true
+Bar.prototype.isPrototypeOf(b1) // true
+```
+
+可以说，其中有些烂透了。举个例子，直觉上（用类）你可能想说这样的东西`Bar instanceof Foo`（因为很容易混淆“实例”的意义认为
+它包含“继承”），但在 JS 中这不是一个合理的比较。你不得不说`Bar.prototype instanceof Foo`。
+
+另一个常见，但也许健壮性更差的*类型自省*模式叫做“duck typing（鸭子类型）”，比起`instanceof`来许多开发者都倾向于它。这个
+术语原子一则谚语，“如果它看起来像鸭子，叫起来像鸭子，那么它一定是一只鸭子”。
+
+例如：
+
+```javascript
+if (a1.something) {
+  a1.something()
+}
+```
+
+与其检查`a1`和一个持有可委托的`something()`函数的对象的关系，我们假设`a1.something`测试通过意味着`a1`有能力调
+用`.something()`（不管是直接在`a1`上直接找到方法，还是委托至其他对象）。就本身而言，这种假设没什么风险。
+
+但是“鸭子类型”常常被扩展用于**除了被测试关于对象能力以外的其他假设**，这当然会在测试中引入更多风险（比如脆弱的设计）。
+
+“鸭子类型”的另一个值得注意的例子来自于 ES6 的 Promise（就是我们前面解释过，将不会在本书内涵盖的内容）。
+
+由于种种原因，需要判定任意一个对象引用是否*是一个 Promise*，但测试是通过检查对象是否恰好有`then()`函数出现在它上面来完成
+的。换句话说，**如果任何对象**恰好有一个`then()`方法，ES6 的 Promises 将会无条件地假设这个对象**是“thenable”**的，而且因
+此会期望它按照所有的 Promises 标准行为那样一致地动作。
+
+如果你有任何非 Promise 对象，而却不管因为什么它恰好拥有`then()`方法，你会被强烈建议使它远离 ES6 的 Promise 机制，来避免
+破坏这种假设。
+
+这个例子清楚地展现了“鸭子类型”的风险。你应当仅在可控的条件下，保守的使用这种方式。
+
+再次将我们的注意力转向本章中出现的 OLOO 风格的代码，*类型自省*变得清晰多了。让我们回想（并缩写）本章的`Foo`/`Bar`/`b1`的
+OLOO 示例：
+
+```javascript
+var Foo = {}
+var Bar = Object.create(Foo)
+Bar.something = function () {}
+
+var b1 = Object.create(Bar)
+```
+
+使用这种 OLOO 方式，我们所拥有的一切都是通过`[[Prototype]]`委托关联起来的普通对象，这是我们可能会用到的大幅简化后的*类型
+自省*：
+
+```javascript
+// `Foo` 和 `Bar` 互相的联系
+Foo.isPrototypeOf(Bar) // true
+Object.getPrototypeOf(Bar) === Foo // true
+
+// `b1` 与 `Foo` 和 `Bar` 的联系
+Foo.isPrototypeOf(b1) // true
+Bar.isPrototypeOf(b1) // true
+Object.getPrototypeOf(b1) === Bar // true
+```
+
+我们不再使用`instanceof`，因为它令人迷惑地假装与类有关系。现在，我们只需要（非正式地）问这个问题，“你是我的*一个*原型吗
+？”。不再需要用`Foo.prototype`或者痛苦冗长的`Foo.prototype.isPrototypeOf(..)`来间接地查询了。
+
+我想可以说这些检查比起前面的一组自行检查，极大地减少了复杂性/杂乱。**又一次，我们看到了在 JS 中 OLOO 要比类风格的编码简
+单（但有着相同的力量）**。
+
+## 总结
+
+在你的软件体系结构中，类和继承是你可以*选用*或*不选用*的设计模式。多数开发者理所当然地认为类是组织代码的唯一（正确的）方
+法，但我们在这里看到了另一种不太常被提到的，但实际上十分强大的设计模式：**行为委托**。
+
+行为委托意味着对象彼此是对等的，在它们自己当中相互委托，而不是父类与子类的关系。JS 的`[[Prototype]]`机制的设计本质，就是
+行为委托机制。这意味着我们可以选择挣扎着在 JS 上实现类机制，也可以欣然接受`[[Prototype]]`作为委托机制的本性。
+
+当你仅用对象设计代码时，它不仅能简化你使用的语法，而且它还能实际上引领更简单的代码结构设计。
+
+OLOO（链接到其他对象的对象）是一种没有类的抽象，而直接创建和关联对象的代码风格。OLOO 十分自然地实现了基
+于`[[Prototype]]`的行为委托。
 
 <style>
   .light-wrapper{
