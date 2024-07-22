@@ -338,7 +338,6 @@ b2.speak()
 
 好了，现在让我们看一个这张图的*稍稍*简化的版本，用它来进行比较稍微“公平”一点 —— 它仅展示了*相关*的实体与关系。
 
-<!-- ![OO-simplify](/javascript-img/book/fig5.png) -->
 <img src="/javascript-img/book/fig5.png" alt="OO-simplify" :class="[isDark?'light-wrapper':'']" >
 
 仍然非常复杂，对吧？虚线描绘了当你在`Foo.prototype`和`Bar.prototype`间建立“继承”时的隐含关系，而且还没有*修复* **丢失
@@ -347,7 +346,6 @@ b2.speak()
 
 现在，让我们看看 OLOO 风格代码的思维模型：
 
-<!-- ![OLOO](/javascript-img/book/fig6.png) -->
 <img src="/javascript-img/book/fig6.png" alt="OLOO" :class="[isDark?'light-wrapper':'']" >
 
 正如你比较他们所得到的，十分明显，OLOO 风格的代码*需要关心的东西少太多了*，因为 OLOO 风格代码接受了**事实**：我们唯一需
@@ -682,7 +680,7 @@ auth.checkAuth()
 
 我们有所有控制器分享的基本行为，它们是`success(..)`，`failure(..)`和`showDialog(..)`。我们的子
 类`LoginController`和`AuthController`覆盖了`failure(..)`和`success(..)`来增强基本类的行为。还要注意的是
-，`AuthController`需要一个`LoginController`实力来与登录 form 互动，所以它变成了一个数据属性成员。
+，`AuthController`需要一个`LoginController`实例来与登录 form 互动，所以它变成了一个数据属性成员。
 
 另外一件要提的事情是，我们选择一些*合成*散布在继承的顶端。`AuthController`需要知道`LoginController`，所以我们初始化它
 （`new loginController()`），并用一个称为`this.login`的类属性成员来引用它，这样`AuthController`才可以调
