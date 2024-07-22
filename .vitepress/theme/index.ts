@@ -1,6 +1,7 @@
-import 'virtual:uno.css'
 import type { Theme } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
+import 'virtual:uno.css'
+import './custom.css'
 
 // import StackBlitz from '../components/StackBlitz.vue'
 // import GridLayout from '../components/GridLayout.vue'
