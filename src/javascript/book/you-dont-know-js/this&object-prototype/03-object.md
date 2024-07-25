@@ -403,7 +403,7 @@ newObj.d === fn // true
 
 在 ES5 之前，JS 语言没有给出直接的方法，让你的代码可以考察或描述属性性质间的区别，比如属性是否为只读。
 
-在 ES5 中，所有的属性都用**属性描述符（property descriptors）**来描述。
+在 ES5 中，所有的属性都用 **属性描述符（property descriptors）** 来描述。
 
 考虑这段代码：
 
