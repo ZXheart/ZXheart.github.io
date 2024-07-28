@@ -325,7 +325,6 @@ b2.speak()
 
 首先，类风格的代码段意味着这样的实体与它们的关系的思维模型：
 
-<!-- ![OO-full](/javascript-img/book/fig4.png) -->
 <img src="/javascript-img/book/fig4.png" alt="OO-full" :class="[isDark?'light-wrapper':'']" >
 
 实际上，这有点儿不公平/误导，因为它展示了许多额外的，你在*技术上*一直不需要知道（虽然你*需要*理解它）的细节。一个关键是
@@ -1029,9 +1028,3 @@ Object.getPrototypeOf(b1) === Bar // true
 
 OLOO（链接到其他对象的对象）是一种没有类的抽象，而直接创建和关联对象的代码风格。OLOO 十分自然地实现了基
 于`[[Prototype]]`的行为委托。
-
-<style>
-  .light-wrapper{
-    background: #f6f6f6;
-  }
-</style>

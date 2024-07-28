@@ -4,4 +4,8 @@
 
   --vp-font-family-mono: 'Cascadia Code', '等线', ui-monospace, 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono',
     'Courier New', monospace;
+
+  .light-wrapper {
+    background: #f6f6f6;
+  }
 }

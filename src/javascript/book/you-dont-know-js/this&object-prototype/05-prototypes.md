@@ -1,3 +1,9 @@
+<script setup lang="ts">
+  import { useData, withBase } from 'vitepress'
+
+  const { isDark } = useData()
+</script>
+
 # :zzz:
 
 [《你不知道的 JavaScript》](https://github.com/getify/You-Dont-Know-JS/blob/1ed-zh-CN/this%20%26%20object%20prototypes/ch5.md)
@@ -272,7 +278,7 @@ console.log(Object.getPrototypeOf(f) === Foo.prototype) // true
 始化（或者继承）类的处理意味着，“将行为计划从这个类拷贝到物理对象中”，对于每一个新实例这都会发生。
 
 但是在 JS 中，没有这样的拷贝处理发生。你不会创建类的多个实例。你可以创建多个对象，它们的`[[Prototype]]`链接至一个共通对
-象。但默认地，没有拷贝发生，如此这些对象彼此间最终不会完全分离和切断关系，而是***链接在一起*** 。
+象。但默认地，没有拷贝发生，如此这些对象彼此间最终不会完全分离和切断关系，而是**_链接在一起_** 。
 
 `new Foo()`得到一个新对象（我们叫它`a`），这个新对象`a`内部地被`[[Prototype]]`链接至`Foo.prototype`对象。
 
@@ -286,9 +292,13 @@ console.log(Object.getPrototypeOf(f) === Foo.prototype) // true
 
 #### 名称的意义何在？
 
-在 JS 中，我们不从一个对象（“类”）向另一个对象（“实例”）_拷贝_。我们在对象之间制造*链接*。对于`[[Prototype]]`机制常被称
-为“原型继承（prototypal inheritance）”，它经常被说成动态语言版的“类继承”。这种说法试图建立在面向类世界中对“继承”含义的共
-识上。但是*弄拧*（**意思是：抹平**）了被理解的语义，来适应动态脚本。
+在 JS 中，我们不从一个对象（“类”）向另一个对象（“实例”）_拷贝_。我们在对象之间制造*链接*。对于`[[Prototype]]`机制，视觉
+上，箭头的移动方向是从右至左，由下至上。
+
+<img src="/javascript-img/book/fig3.png" alt="links between objects" :class="[isDark?'light-wrapper':'']" >
+
+这种机制常被称为“原型继承（prototypal inheritance）”（我们很快就用代码说明），它经常被说成动态语言版的“类继承”。这种说法试
+图建立在面向类世界中对“继承”含义的共识上。但是*弄拧*（**意思是：抹平**）了被理解的语义，来适应动态脚本。
 
 先入为主，“继承”这个词有很强的含义。仅仅在它面前加入“原型”来区别于 JS 中*实际上几乎相反的*行为，使真相在泥泞般的困惑中沉
 睡了近二十年。
@@ -495,6 +505,11 @@ Object.defineProperty(Foo.prototype, 'constructor', {
 
 实际上，我们已经看到了一个常被称为“原型继承”的机制如何工作：`a`可以“继承自”`Foo.prototype`，并因此可以访问`myName()`。但
 是我们传统的想法认为“继承”是两个“类”间的关系，而非“类”与“实例”的关系。
+
+<img src="/javascript-img/book/fig3.png" alt="links between objects" :class="[isDark?'light-wrapper':'']" >
+
+回想之前这幅图，它不仅展示了从对象（也就是“实例”）`a1`到对象`Foo.prototype`的委托，而且从`Bar.prototype`到`Foo.prototype`，
+这酷似类继承的亲子概念。_酷似_，除了方向，箭头表示的是委托链接，而不是拷贝操作。
 
 这里是一段典型的创建这样的链接的“原型风格”代码：
 

@@ -52,5 +52,10 @@ export function nav(): DefaultTheme.NavItem[] {
       link: '/vue-router/essentials/01-getting-started',
       activeMatch: '/vue-router/',
     },
+    {
+      text: 'Others',
+      items: [{ text: 'Vim', link: '/others/vim/about-vim', activeMatch: '/about-vim' }],
+      activeMatch: '/others/',
+    },
   ]
 }

@@ -68,15 +68,10 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
                 { text: 'this or that', link: 'book/you-dont-know-js/this&object-prototype/01-this' },
                 { text: 'this all makes sense now', link: 'book/you-dont-know-js/this&object-prototype/02-this' },
                 { text: 'object', link: 'book/you-dont-know-js/this&object-prototype/03-object' },
-                {
-                  text: `mixing (up) 'class' object`,
-                  link: 'book/you-dont-know-js/this&object-prototype/04-mixing-class-objects',
-                },
+                { text: `mixing (up) 'class' object`, link: 'book/you-dont-know-js/this&object-prototype/04-mixing-class-objects' },
                 { text: `prototypes`, link: 'book/you-dont-know-js/this&object-prototype/05-prototypes' },
-                {
-                  text: `behavior delegation`,
-                  link: 'book/you-dont-know-js/this&object-prototype/06-behavior-delegation',
-                },
+                { text: `behavior delegation`, link: 'book/you-dont-know-js/this&object-prototype/06-behavior-delegation' },
+                { text: `appendixA ES6 class`, link: 'book/you-dont-know-js/this&object-prototype/appendixA' },
               ],
             },
             {

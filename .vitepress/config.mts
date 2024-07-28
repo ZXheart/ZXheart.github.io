@@ -3,20 +3,12 @@ import { defineConfig } from 'vitepress'
 
 import cjk_breaks from 'markdown-it-cjk-breaks'
 
-import {
-  nav,
-  sidebarCSS,
-  sidebarEg,
-  sidebarGithub,
-  sidebarJS,
-  sidebarNodejs,
-  sidebarVitePress,
-  sidebarVueRouter,
-} from './theme-config'
+import { nav, sidebarCSS, sidebarEg, sidebarGithub, sidebarJS, sidebarNodejs, sidebarOthers, sidebarVitePress, sidebarVueRouter } from './theme-config'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  title: 'Keep going',
+  // title: 'Keep going',
+  title: ' ',
   description: 'Force yourself to make a change',
   head: [['line', { rel: 'icon', href: '/favicon.ico' }]],
   srcDir: 'src',
@@ -41,11 +33,11 @@ export default defineConfig({
       '/css/': { base: '/css/', items: sidebarCSS() },
       '/nodejs/': { base: '/nodejs/', items: sidebarNodejs() },
       '/vue-router/': { base: '/vue-router/', items: sidebarVueRouter() },
+      '/others/': { base: '/others/', items: sidebarOthers() },
     },
-    socialLinks: [{ icon: 'github', link: 'https://github.com/vuejs/vitepress' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/ZXheart/ZXheart.github.io' }],
     footer: {
-      message:
-        'Released under the <a href="https://github.com/ZXheart/ZXheart.github.io?tab=MIT-1-ov-file"> MIT License.</a>',
+      message: 'Released under the <a href="https://github.com/ZXheart/ZXheart.github.io?tab=MIT-1-ov-file"> MIT License.</a>',
       copyright: 'Copyright © 2023-present <a href="https://github.com/ZXheart/ZXheart.github.io">julien</a>',
     },
     outline: { level: 'deep' },

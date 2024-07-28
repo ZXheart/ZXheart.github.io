@@ -1,8 +1,8 @@
 {
-
   // Disable the default formatter, use eslint instead
   // "prettier.enable": false,
   "prettier.enable": true,
+  "prettier.printWidth": 160,
 
   // Auto fix
   // "editor.codeActionsOnSave": {
