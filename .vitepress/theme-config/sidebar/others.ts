@@ -15,7 +15,7 @@ export function sidebarOthers(): DefaultTheme.SidebarItem[] {
       collapsed: false,
       items: [
         { text: 'Vim', link: 'vim/about-vim' },
-        { text: 'Vim commands', link: 'viv/vim-commands' },
+        { text: 'Vim commands', link: 'vim/vim-commands' },
       ],
     },
   ]
