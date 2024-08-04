@@ -405,7 +405,7 @@ a // {}
 **不全是**。JS 开发者们尽可能地模拟面向类：
 
 ```javascript
-function foo(name) {
+function Foo(name) {
   this.name = name
 }
 Foo.prototype.myName = function () {
@@ -779,7 +779,7 @@ if (!Object.create) {
 }
 ```
 
-这个填补工具通过一个一次性的`F`函数并覆盖它 de`.prototype`属性来指向我们想连接到的对象。之后我们用`new F()`构造器调用来
+这个填补工具通过一个一次性的`F`函数并覆盖它 de`.prototype`属性来指向我们想链接到的对象。之后我们用`new F()`构造器调用来
 制造一个将会链到我们指定对象上的新对象。
 
 `Object.create(..)`的这种用法是目前最常见的用法，因为它的这部分是*可以*填补的。ES5 标准的内建`Object.create(..)`还提供了

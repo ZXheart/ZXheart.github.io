@@ -5,7 +5,7 @@
     "lib": ["DOM", "ESNext"],
     "baseUrl": "./",
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     // "preserveSymlinks": true,
     "allowJs": true,
@@ -35,15 +35,5 @@
     "**/*.d.ts",
     "docs/.vitepress/**/*.ts"
   ],
-  "exclude": [
-    "**/.cache",
-    "**/.temp",
-    "**/.tmp",
-    "**/cache",
-    "**/temp",
-    "**/tmp",
-    "**/dist",
-    "**/node_modules",
-    "eslint.config.js"
-  ]
+  "exclude": ["**/.cache", "**/.temp", "**/.tmp", "**/cache", "**/temp", "**/tmp", "**/dist", "**/node_modules", "eslint.config.js"]
 }
