@@ -77,6 +77,7 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
             {
               text: 'scope&closures',
               collapsed: true,
+              items: [{ text: 'what is scope', link: 'book/you-dont-know-js/scope&closures/01-what-is-scope' }],
             },
           ],
         },
