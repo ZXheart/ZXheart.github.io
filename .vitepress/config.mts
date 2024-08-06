@@ -1,4 +1,5 @@
 import UnoCSS from 'unocss/vite'
+import footnote_plugin from 'markdown-it-footnote'
 import { defineConfig } from 'vitepress'
 
 import cjk_breaks from 'markdown-it-cjk-breaks'
@@ -15,7 +16,10 @@ export default defineConfig({
   lastUpdated: true,
   markdown: {
     lineNumbers: true,
-    config: md => md.use(cjk_breaks),
+    config: md => {
+      md.use(cjk_breaks)
+      md.use(footnote_plugin)
+    },
   },
   vite: {
     plugins: [UnoCSS()],

@@ -77,7 +77,16 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
             {
               text: 'scope&closures',
               collapsed: true,
-              items: [{ text: 'what is scope', link: 'book/you-dont-know-js/scope&closures/01-what-is-scope' }],
+              items: [
+                { text: 'what is scope', link: 'book/you-dont-know-js/scope&closures/01-what-is-scope' },
+                { text: 'lexical scope', link: 'book/you-dont-know-js/scope&closures/02-lexical-scope' },
+                { text: 'function vs. block scope', link: 'book/you-dont-know-js/scope&closures/03-function-vs-block-scope' },
+                { text: 'hoisting', link: 'book/you-dont-know-js/scope&closures/04-hoisting' },
+                { text: 'scope closure', link: 'book/you-dont-know-js/scope&closures/05-scope-closure' },
+                { text: 'dynamic scope', link: 'book/you-dont-know-js/scope&closures/appendixA' },
+                { text: 'polyfilling block scope', link: 'book/you-dont-know-js/scope&closures/appendixB' },
+                { text: 'lexical this', link: 'book/you-dont-know-js/scope&closures/appendixC' },
+              ],
             },
           ],
         },
