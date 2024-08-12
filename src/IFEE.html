@@ -7,9 +7,16 @@
   </head>
   <body>
     <script>
-      ;(function () {
-        console.log(window)
-      })()
+      // IIFE
+      ;(function foo(global) {
+        console.log(global)
+      })(window)
+      // UMD
+      ;(function IIFE(def) {
+        def(window)
+      })(function def(global) {
+        console.log(global)
+      })
 
       var a = 1
       if (true) {

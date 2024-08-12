@@ -129,7 +129,7 @@ JS 拥有*一些*像类的语法元素（比如`new`和`instanceof`）有一阵�
 
 与考虑对象实例与它源自的类的任何间接关系相比，考虑类和对象实例的直接关系更有用。**一个类通过拷贝操作实例化为对象形式。**
 
-<img src="/javascript-img/book/fig1.png" alt="instantiate by copying" :class="[isDark?'light-wrapper':'']" >
+<img src="/javascript-img/book/you-dont-know-js/this&object-prototype/fig1.png" alt="instantiate by copying" :class="[isDark?'light-wrapper':'']" >
 
 如你所见，箭头由左向右，从上至下，这表示着概念上和物理上发生的拷贝操作。
 
@@ -275,7 +275,7 @@ class SpeedBoat inherits Vehicle{
 
 记得刚才这幅图：
 
-<img src="/javascript-img/book/fig1.png" alt="instantiate by copying" :class="[isDark?'light-wrapper':'']" >
+<img src="/javascript-img/book/you-dont-know-js/this&object-prototype/fig1.png" alt="instantiate by copying" :class="[isDark?'light-wrapper':'']" >
 
 注意对于实例化（`a1`、`a2`、`b1`和`b2`）*和*继承（`Bar`），箭头如何表示拷贝操作。
 
@@ -296,7 +296,7 @@ class SpeedBoat inherits Vehicle{
 法`drive()`，而“B” 和“C”都覆盖（多态地）了这个方法，那么当“D”引用`drive()`时，它应当使用哪个版本呢？（`B:drive()`还
 是`C:drive()`）
 
-<img src="/javascript-img/book/fig2.png" alt="The Diamond Issue" :class="[isDark?'light-wrapper':'']" >
+<img src="/javascript-img/book/you-dont-know-js/this&object-prototype/fig2.png" alt="The Diamond Issue" :class="[isDark?'light-wrapper':'']" >
 
 事情会比我们这样窥豹一斑能看到的复杂得多。我们在这里将它们提出来，只是便于我们可以将它和 JS 机制的工作方式比较。
 
