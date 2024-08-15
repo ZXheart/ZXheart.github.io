@@ -62,6 +62,20 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
           collapsed: true,
           items: [
             {
+              text: 'scope & closures',
+              collapsed: true,
+              items: [
+                { text: 'what is scope', link: 'book/you-dont-know-js/scope&closures/01-what-is-scope' },
+                { text: 'lexical scope', link: 'book/you-dont-know-js/scope&closures/02-lexical-scope' },
+                { text: 'function vs. block scope', link: 'book/you-dont-know-js/scope&closures/03-function-vs-block-scope' },
+                { text: 'hoisting', link: 'book/you-dont-know-js/scope&closures/04-hoisting' },
+                { text: 'scope closure', link: 'book/you-dont-know-js/scope&closures/05-scope-closure' },
+                { text: 'dynamic scope', link: 'book/you-dont-know-js/scope&closures/appendixA' },
+                { text: 'polyfilling block scope', link: 'book/you-dont-know-js/scope&closures/appendixB' },
+                { text: 'lexical this', link: 'book/you-dont-know-js/scope&closures/appendixC' },
+              ],
+            },
+            {
               text: 'this & object prototype',
               collapsed: true,
               items: [
@@ -75,17 +89,15 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
               ],
             },
             {
-              text: 'scope&closures',
+              text: 'types & grammar',
               collapsed: true,
               items: [
-                { text: 'what is scope', link: 'book/you-dont-know-js/scope&closures/01-what-is-scope' },
-                { text: 'lexical scope', link: 'book/you-dont-know-js/scope&closures/02-lexical-scope' },
-                { text: 'function vs. block scope', link: 'book/you-dont-know-js/scope&closures/03-function-vs-block-scope' },
-                { text: 'hoisting', link: 'book/you-dont-know-js/scope&closures/04-hoisting' },
-                { text: 'scope closure', link: 'book/you-dont-know-js/scope&closures/05-scope-closure' },
-                { text: 'dynamic scope', link: 'book/you-dont-know-js/scope&closures/appendixA' },
-                { text: 'polyfilling block scope', link: 'book/you-dont-know-js/scope&closures/appendixB' },
-                { text: 'lexical this', link: 'book/you-dont-know-js/scope&closures/appendixC' },
+                { text: 'types', link: 'book/you-dont-know-js/types&grammar/01-types' },
+                { text: 'values', link: 'book/you-dont-know-js/types&grammar/02-values' },
+                { text: 'natives', link: 'book/you-dont-know-js/types&grammar/03-natives' },
+                { text: 'coercion', link: 'book/you-dont-know-js/types&grammar/04-coercion' },
+                { text: 'grammar', link: 'book/you-dont-know-js/types&grammar/05-grammar' },
+                { text: 'mixed environment JS', link: 'book/you-dont-know-js/types&grammar/appendixA' },
               ],
             },
           ],
