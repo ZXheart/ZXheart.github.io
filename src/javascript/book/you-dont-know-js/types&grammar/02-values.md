@@ -79,3 +79,744 @@ a.length // 14
 ```
 
 一般来说，向`array`添加`string`键/属性不是一个好主意。最好使用`object`来持有键/属性形式的值，而将`array`专用于严格地数字索引的值。
+
+### 类 Array
+
+偶尔你需要将一个类`array`值（一个数字索引的值的集合）转换为一个真正的`array`，通常你可以对这些值的集合调用数据的工具函数（比如`indexOf(..)`、
+`concat(..)`、`forEach(..)`等等）。
+
+举个例子，各种 DOM 查询操作会返回一个 DOM 元素的列表，对于我们转换的目的来说，这些列表不是真正的`array`但是也足够类似`array`。另一个常见
+的例子是，函数为了像列表一样访问它的参数值，而暴露了`argument`对象（类`array`，在 ES6 中被废弃了）。
+
+一个进行这种转换的很常见的方法是对这个值借用`slice(..)`工具：
+
+```javascript
+function foo() {
+  var arr = Array.prototype.slice.call(arguments)
+  arr.push('bam')
+  console.log(arr)
+}
+
+foo('bar', 'baz') // ['bar', 'baz', 'bam']
+```
+
+如果`slice()`没有用其他额外的参数调用，就像上面的代码段那样，它的参数的默认值会使它具有复制这个`array`（或者，在这个例子中，是一个类
+`array`）的效果。
+
+在 ES6 中，还有一种称为`Array.from(..)`的内建工具可以执行相同的任务：
+
+```javascript
+var arr = Array.from(arguments)
+```
+
+**注意：** `Array.from(..)`拥有其他几种强大的能力，我们将在本系列的*ES6 与未来*中涵盖它的细节。
+
+## String
+
+一个很常见的想法是，`string`实质上只是字符的`array`。虽然内部的实现可能是也可能不是`array`，但重要的是要理解 JS 的`string`与字符的`array`
+确实不一样。它们的相似性几乎只是表面上的。
+
+举个例子，让我们考虑这两个值：
+
+```javascript
+var a = 'foo'
+var b = ['f', 'o', 'o']
+```
+
+`string`确实与`array`有很肤浅的相似性——也去就是上面说的，类`array`——举例来说，它们都有一个`length`属性，一个`indexOf(..)`方法（在
+ES5 中仅有`array`版本），和一个`concat(..)`方法：
+
+```javascript
+a.length // 3
+b.length // 3
+
+a.indexOf('o') // 1
+b.indexOf('o') // 1
+
+var c = a.concat('bar') // 'foobar'
+var d = b.concat(['b', 'a', 'r']) // ['f', 'o', 'o', 'b', 'a', 'r']
+
+a === c // false
+b === d // false
+
+a // 'foo'
+b // ['f', 'o', 'o']
+```
+
+那么，它们基本上都仅仅是“字符的数组”，对吗？**不确切**。
+
+```javascript
+a[1] = 'O'
+b[1] = 'O'
+
+a // 'foo'
+b // ['f', 'O', 'o']
+```
+
+JS 中的`string`是不可改变的，而`array`是相当可变的。另外，在 JS 中用位置访问字符的`a[1]`形式不总是广泛合法的。老版本的 IE 就不允许这种
+语法（但是他们现在允许了——死的好）。相反，*正确的*方式是`a.charAt(1)`。
+
+`string`不可变性的进一步的后果是，`string`上没有一个方法是可以原地修改它的内容的，而是创建并返回一个新的`string`。与之相对的是，许多改变
+`array`内容的方法实际上*是*原地修改的。
+
+```javascript
+c = a.toUpperCase()
+a === c // false
+a // 'foo'
+c // 'FOO'
+
+b.push('!')
+b // ['f', 'O', 'o', '!']
+```
+
+另外，许多`array`方法在处理`string`时非常有用，虽然这些方法不属于`string`，但我们可以对我们的`string`“借用”非变化的`array`方法：
+
+```javascript
+a.join // undefined
+a.map // undefined
+
+var c = Array.prototype.join.call(a, '-')
+var d = Array.prototype.map
+  .call(a, function (v) {
+    return v.toUpperCase() + '.'
+  })
+  .join('')
+
+c // 'f-o-o'
+d // 'F.O.O.'
+```
+
+让我们来看另一个例子：翻转一个`string`（顺带一提，这是一个 JS 面试中常见的细节问题！）。`array`拥有一个原地的`reverse()`修改器方法，但是
+`string`没有：
+
+```javascript
+a.reverse // undefined
+
+b.reverse()
+b // ['!', 'o', 'O', 'f']
+```
+
+不幸的是，这种“借用”`array`修改器不起作用，因为`string`不可可变的，因此它不能被原地修改：
+
+```javascript
+Array.prototype.reverse.call(a)
+// 仍然返回一个“foo”的 String对象包装器（见第三章）（不是哦，可能是早期如此）
+// TypeError: Cannot assign to read only property '0' of object '[object String]' （Chrome 127）
+```
+
+另一种迂回的做法（也是黑科技）是，将`string`转换为一个`array`，实施我们想做的操作，然后将它转回`string`。
+
+```javascript
+var c = a.split('').reverse().join('')
+
+c // 'oof'
+```
+
+如果你觉得这很难看，没错。不管怎样，对于简单的`string`它*好用*，所以如果你需要某些快速但是“脏”的东西，像这样的方式经常能满足你。
+
+**警告：** 小心！这种方法对含有复杂（unicode）字符（星型字符、多字节字符等）的`string`**不起作用**。你需要支持 unicode 的更精巧的工具库
+来准确地处理这种操作。在这个问题上可以咨询 Mathias Bynens 的作品：[Esrever](https://github.com/mathiasbynens/esrever)
+
+另一种考虑这个问题的方式是：如果你更经常地将你的“string”基本上作为*字符的数据*来执行一些任务的话，也许就将它们作为`array`而不是作为`string`
+存储更好。你可能会因此省去很多每次都将`string`转换为`array`的麻烦。无论何时你确实需要`string`的表现形式的话，你总是可以对*字符的*`array`调用`join()`方法。
+
+## Number
+
+JS 只有一种数字类型：`number`。这种类型包含“整数”值和小数值。我说“整数”时加了引号，因为 JS 的一个长久以来为人诟病的原因是，和其它语言不同，
+JS 没有真正的整数。这可能在未来某个时候会改变，但是目前，我们只有`number`可用。
+
+所以，在 JS 中，一个“整数”只是一个没有小数部分的小数值。也就是说，`42.0`和`42`一样是“整数”。
+
+像大多数现代计算机语言，以及所有的脚本语言一样，JS 的`number`的实现基于“IEEE 745”标准，通常被称为“浮点”。JS 明确地使用了这个标准的“双精
+度”（也就是“64 位二进制”）格式。
+
+在网络上有许多了不起的文章都在介绍二进制浮点数如何在内存中存储的细节，以及选择这些做法的意义。因为对于理解如何在 JS 中明确使用`number`来说，
+理解内存中的位模式不是必须的，所以我们将这个话题作为练习留给那些想要进一步挖掘 IEEE 754 的细节的读者。
+
+### 数字的语法
+
+在 JS 中字面数字一般用十进制小数表示。例如：
+
+```javascript
+var a = 42
+var b = 42.3
+```
+
+小数的整数部分如果是`0`，是可选的：
+
+```javascript
+var a = 0.42
+var b = 0.42
+```
+
+相似地，一个小数在`.`之后的小数部分如果是`0`，是可选的：
+
+```javascript
+var a = 42.0
+var b = 42
+```
+
+**警告：** `42.`是极不常见的，如果你正在努力避免别人阅读你的代码时感到困惑，它可能不是一个好主意。但不管怎样，它是合法的。
+
+默认情况下，大多数`number`将会以十进制小数的形式输出，并去掉末尾小数部分的`0`。所以：
+
+```javascript
+var a = 42.3
+var b = 42.0
+
+a // 42.3
+b // 42
+```
+
+非常大或非常小的`number`将默认以指数形式输出，与`toExponential()`方法的输出一样，比如：
+
+```javascript
+var a = 5e10
+a // 50000000000
+a.toExponential() // '5e+10'
+
+var b = a * a
+b // 2.5e+21
+
+var c = 1 / a
+c // 2e-11
+```
+
+因为`number`值可以用`Number`对象包装器（见第三章），所以`number`值可以访问内建在`Number.prototype`上的方法（见第三章）。举个例子，
+`toFixed(..)`方法允许你指定一个值在被表示时，带有多少位小数：
+
+```javascript
+var a = 42.59
+
+a.toFixed(0) // '43'
+a.toFixed(1) // '42.6'
+a.toFixed(2) // '42.59'
+a.toFixed(3) // '42.590'
+a.toFixed(4) // '42.5900'
+```
+
+要注意的是，它的输出实际上是一个`number`的`string`表现形式，而且如果你指定的位数多于值持有的小数位数时，会在右侧补`0`。
+
+`toPrecision(..)`很相似，但它指定的是有多少*有效数字*用来表示这个值：
+
+```javascript
+var a = 42.59
+
+a.toPrecision(1) // '4e+1'
+a.toPrecision(2) // '43'
+a.toPrecision(3) // '42.6'
+a.toPrecision(4) // '42.59'
+a.toPrecision(5) // '42.590'
+a.toPrecision(6) // '42.5900'
+```
+
+你不必非得使用持有这个值的变量来访问这些方法；你可以直接在`number`的字面上访问这些方法。但你不得不小心`.`操作符。因为`.`是一个合法数字字符，
+如果可能的话，它会首先被翻译为`number`字面的一部分，而不是被翻译为属性访问操作符。
+
+```javascript
+// 不合法的语法：
+42.toFixed(3) // SyntaxError
+
+// 这些都是合法的：
+(42).toFixed(3) // '42.000'
+0.42.toFixed(3) // '0.420'
+42..toFixed(3) // '42.000'
+```
+
+`42.toFixed(3)`是不合法的语法，因为`.`作为`42.`字面（这是合法的——参见上面的讨论！）的一部分被吞掉了，因此没有`.`属性操作符来表示`.toFixed`访问。
+
+`42..toFixed(3)`可以工作，因为第一个`.`是`number`的一部分，而第二个`.`是属性操作符。但它可能看起来很古怪，而且确实在实际的 JS 代码中很
+少会看到这样的东西。实际上，在任何基本类型上直接访问方法是十分不常见的。但是不常见并不意味着*坏*或者*错*。
+
+**注意：** 有一些库扩展了内建的`Number.prototype`（见第三章），使用`number`或在`number`上提供了额外的操作，所以在这些情况下，像使用
+`10..makeItRain()`来设定一个十秒钟的下雨的动画，或者其他诸如此类的傻事是完全合法的。
+
+从技术上讲，这也是合法的（注意那个空格）：
+
+```javascript
+// 42 .toFixed(3) // '42.000'
+```
+
+但是，尤其是对`number`字面量来说，**这是特别使人糊涂的代码风格**，而且除了使其他开发者（和未来的你）糊涂以外没有任何用处。避免它。`number`
+还可以使用科学计数法的形式指定，这在表达很大的`number`时很常见，比如：
+
+```javascript
+var onThousand = 1e3 // 1000 1*10^3
+var oneMillionOneHundredThousand = 1.1e6 // 1100000 1.1*10^6
+```
+
+`number`字面量还可以使用其他进制表达，比如二进制，八进制，和十六进制。
+
+这些格式是可以在当前版本的 JS 中使用的：
+
+```javascript
+0xf3 // 十六进制的：243
+// 0Xf3 // 十六进制的：243
+
+0363 // 八进制的：243
+```
+
+**注意：** 从 ES6 + `strict`模式开始，不再允许`0363`这样的八进制行使（新的形式参见后面的讨论）。`0363`在非`strict`模式下依然是允许的，但
+是不管怎样你应当停止使用它，来拥抱未来（而且因为你现在应当在使用`strict`模式了！）。
+
+至于 ES6，下面的新形式也是合法的：
+
+```javascript
+0o363 // 八进制的：243
+// 0O363 // 八进制的：243
+
+0b11110011 // 二进制的：243
+// 0B11110011 // 二进制的：243
+```
+
+请为你的开发者同胞们做件好事：绝不要使用`0O363`形式。把`0`放在大写的`O`旁边就是在制造困惑。保持是用小写的谓词`0x`、`0b`和`0o`。
+
+### 小数值
+
+使用二进制浮点数的最出名（臭名昭著）的副作用是（这是对**所有**使用 IEEE745 的语言都成立的——不是许多人认为/假装*仅*在 JS 中存在的问题）：
+
+```javascript
+0.1 + 0.2 === 0.3 // false
+```
+
+从数学的意义上，我们知道这个语句应当为`true`。为什么它是`false`？
+
+简单地说，`0.1`和`0.2`的二进制表示形式是不准确的，所以它们相加时，结果不是精确地`0.3`。而是**非常**接近的值：`0.30000000000000004`，
+但是如果你的比较失败了，“接近”是无关紧要的。
+
+**注意：** JS 应当切换到可以精确表达所有值的一个不同的`number`实现吗？有些人认为应该。多年以来有许多选项出现过。但是没有一个被采纳，而且也
+许永远也不会。它看起来就像挥挥手然后说“已经改好那个 bug 了！”那么简单，但根本不是那么回事儿。如果真有这么简单，它绝对在很久以前就被改掉了。
+
+现在的问题是，如果一些`number`不能被*信任*为精确的，这不是意味着我们根本不能使用`number`吗？**当然不是**。
+
+在一些应用程序中你需要多加小心，特别是在对付小数的时候。还有许多（也许是大多数？）应用程序只处理整数，而且，最大只处理到几百万到几万亿。这些
+应用程序使用 JS 中的数字操作时，而且将总是**非常安全**的。
+
+要是我们*确实*需要比较两个`number`，就像`0.1 + 0.2`与`0.3`，而且知道这个简单的相等测试将会失败呢？
+
+可以接受的最常见的做法是使用一个很小的“错误舍入”值作为比较的*容差*。这个很小的值经常被称为“机器精度（machine epsilon）”，对于 JS 来说这种
+`number`通常为`2^-52`（这是 IEEE 745 双精度的精度。这个值是`2.220446049250313e-16`。）
+
+```javascript
+if (!Number.EPSILON) {
+  Number.EPSILON = Math.pow(2, -52)
+}
+```
+
+我们可以使用这个`Number.EPSILON`来比较两个`number`的“等价性”（带有错误舍入的容差）：
+
+```javascript
+function numbersCloseEnoughToEqual(n1, n2) {
+  return Math.abs(n1 - n2) < Number.EPSILON
+}
+
+var a = 0.1 + 0.2
+var b = 0.3
+
+numbersCloseEnoughToEqual(a, b) // true
+numbersCloseEnoughToEqual(0.0000001, 0.0000002) // false
+```
+
+可以被表示的最大的浮点值大概是`1.798e+308`（它真的非常，非常，非常大！），它为你预定义为`Number.MAX_VALUE`。在极小的一端，`Number.MIN_VALUE`
+大概是`5e-324`，它不是负数但是非常接近于 0!。
+
+### 安全整数范围
+
+由于`number`的表示方式，对完全是`number`的“整数”而言有一个“安全”的值的的范围，而且他要比`Number.MAX_VALUE`小得多。
+
+可以“安全地”被表示的最大整数（也就是说，可以保证被表示的值是实际可以无误地表示的）是`2^53 - 1`，也就是`900_719_925_474_0991`。如果你
+插入一些分隔符，可以看到它刚好超过 9 万亿。所以对于`number`能表示的上限来说它确实是够 TM 大的。
+
+在 ES6 的这个值实际上是自动预定义的，它是`Number.MAX_SAFE_INTEGER`。意料之中的是，还有一个最小值，`-900_719_925_474_0991`，它在 ES6 中
+定义为`Number.MIN_SAFE_INTEGER`。
+
+JS 程序面临处理这样大的数字的主要情况是，处理数据库中的 64 位 ID 等等。64 位数字不能使用`number`类型准确表达，所以在 JS 中必须使用`string`
+表现形式存储（和传递）。
+
+谢天谢地，在这样的大 ID`number`值上的数字操作（除了比较，它使用`string`也没问题）并不常见。但是如果你*确实*需要在这些非常大的值上实施数学
+操作，目前来讲你需要使用一个*bigInt*工具。在未来版本的 JS 中，*bigInt*也许会得到官方的支持。
+
+### 测试整数
+
+测试一个值是否是整数，你可以使用 ES6 定义的`Number.isInteger(..)`：
+
+```javascript
+Number.isInteger(42) // true
+Number.isInteger(42.0) // true
+Number.isInteger(42.3) // false
+```
+
+可以为 ES6 前填补`Number.isInteger(..)`：
+
+```javascript
+if (!Number.isInteger) {
+  Number.isInteger = function (num) {
+    return typeof num === 'number' && num % 1 === 0
+  }
+}
+```
+
+要测试一个值是否是*安全整数*，使用 ES6 定义的`Number.isSafeInteger(..)`：
+
+```javascript
+Number.isSafeInteger(Number.MAX_SAFE_INTEGER) // true
+Number.isSafeInteger(Math.pow(2, 53)) // false
+Number.isSafeInteger(Math.pow(2, 53) - 1) // true
+```
+
+可以为 ES6 前浏览器填补`Number.isSafeInteger(..)`：
+
+```javascript
+if (!Number.isSafeInteger) {
+  Number.isSafeInteger = function (num) {
+    return Number.isInteger(num) && Math.abs(num) <= Number.MAX_SAFE_INTEGER
+  }
+}
+```
+
+### 32 位（有符号）整数
+
+虽然整数可以安全地最大达到约九万亿（53 比特），但有一些数字操作（比如位操作符）是仅仅为 32 位`number`定义的，所以对于这样使用的`number`
+来说，“安全范围”一定会小得多。
+
+这个范围是从`Math.pow(-2,31)`（`-2_147_483_648`，大约-21 亿）到`Math.pow(2,31) - 1`（`2_147_483_647`，大约 21 亿）。
+
+要强制`a`中的`number`值是 32 位有符号整数，使用`a | 0`。这可以工作是因为`|`位操作符仅仅对 32 位值起作用（意味着它可以只关注 32 位，而其他的位
+将被丢掉）。而且，和 0 进行“或”的位操作实质上是什么也不做。
+
+**注意：** 特定的特殊值（我们将在下一节讨论），比如`NaN`和`Infinity`不是“32 位安全”的，当这些值被传入位操作符时将会通过一个抽象操作
+`ToInt32`（见第四章）并为了位操作而简单地变成`+0`值。
+
+## 特殊值
+
+在各种类型中有几个特殊值，*警惕*的 JS 开发者需要小心，并正确使用。
+
+### 不是值的值
+
+对于`undefined`类型来说，有且仅有一个值：`undefined`。对于`null`类型来说，有且仅有一个值：`null`。所以对它们而言，这些文字即是它们的类型也是它们的值。
+
+`undefined`和`null`作为“空”值或者“没有”值，经常被认为是可以互换的。另一些开发者偏好于使用微妙的区别将它们区分开。举例来将：
+
+- `null`是一个空值
+
+- `undefined`是一个丢失的值
+
+或者
+
+- `undefined`还没有值
+
+- `null`曾经有过值但现在没有
+
+不管你选择如何“定义”和使用这两个值，`null`是一个特殊的关键字，而不是一个标识符，因此你不能将它作为一个变量对待来给它赋值（为什么你要给它赋
+值呢？！）。然而，`undefined`（不幸地）*是*一个标识符。噢。
+
+### Undefined
+
+在非`strict`模式下，给在全局上提供的`undefined`标识符赋一个值实际上是可能的（虽然这是一个非常不好的做法！）：
+
+```javascript
+function foo() {
+  undefined = 2 // 非常差劲儿的主意！
+}
+foo()
+```
+
+```javascript
+function foo() {
+  'use strict'
+  undefined = 2 // TypeError
+}
+foo()
+```
+
+但是，在非`strict`模式和`strict`模式下，你可以创建一个名叫`undefined`局部变量，但这又是一个很差劲儿的主意！
+
+```javascript
+function foo() {
+  'use strict'
+  var undefined = 2
+  console.log(undefined) // 2
+}
+
+foo()
+```
+
+**朋友不会让朋友覆盖`undefined`。永远。**
+
+#### `void`操作符
+
+虽然`undefined`是一个持有内建的值`undefined`的内建标识符（除非被修改——见上面的讨论！），另一个得到这个值的方法是`void`操作符。
+
+表达式`void__`会“躲开”任何值，所以这个表达式的结果总是`undefined`。它不会修改任何已经存在的值；只是确保不会有值从操作符表达式中返回来。
+
+```javascript
+var a = 42
+console.log(void a, a) // undefined 42
+```
+
+从惯例上将（大约是从 C 语言编程中发展而来），要通过使用`void`来独立表现值`undefined`，你可以使用`void 0`（虽然，很明显，`void true`或者
+任何其他的`void`表达式都做同样的事情）。在`void 0`、`void 1`和`undefined`之间没有实际上的区别。
+
+但是在几种其他的环境下`void`操作符可以十分有用：如果你需要确保一个表达式没有结果值（即便它有副作用）。
+
+举个例子：
+
+```javascript
+function doSomething() {
+  // 注意：`APP.ready` 是由我们的应用程序提供的
+  if (!APP.ready) {
+    // 稍后再试一次
+    return void setTimeout(doSomething, 100)
+  }
+
+  var result
+
+  // 其他操作
+  return result
+}
+
+// 我们能立即执行吗？
+if (doSomething()) {
+  // 是的，我们可以
+}
+```
+
+这里，`setTimeout(..)`函数返回一个数字值（时间间隔定时器的唯一标识符，用于取消它自己），但是我们想`void`它，这样我们函数的返回值不会在`if`
+语句上给出一个成立的误报。
+
+许多开发者宁愿将这些动作分开，这样的效果相同但不使用`void`操作符：
+
+```javascript
+if (!APP.ready) {
+  // 稍后再试一次
+  setTimeout(doSomething, 100)
+  return
+}
+```
+
+一般来说，如果有那么一个地方，有一个值存在（来自某个表达式）而你发现这个值是`undefined`才有用，就是用`void`操作符。这个能在你的程序中不
+是非常常见，但如果在一些稀有的情况下你需要它，它就十分有用。
+
+### 特殊的数字
+
+`number`类型包含几种特殊值。我们将会仔细考察每一种。
+
+#### 不是数字的数字
+
+如果你不使用同为`number`（或者可以翻译为十进制或十六进制的普通`number`的值）的两个操作数进行任何算术操作，那么操作的结果将失败而产生一个
+不合法的`number`，在这种情况下你将得到`NaN`值。
+
+`NaN`在字面上代表“不是一个`number`(Not a Number)”，但是正如我们即将看到的，这种文字描述十分失败而且容易误导人。将`NaN`考虑为“不合法数
+字”，“失败的数字”，甚至是“坏掉的数字”都要比“不是一个数字”准确的多。
+
+举例来说：
+
+```javascript
+var a = 2 / 'foo' // NaN
+
+typeof a === 'number' // true
+```
+
+换句话说：“不是一个数字”的类型是“数字”！为这使人糊涂的名字和语义欢呼吧。
+
+`NaN`是一种“哨兵值”（一个被赋予了特殊意义的普通的值），它代表`number`集合内的一种特殊的错误情况。这种错误情况实质上是：“我试着进行数学操
+作但是失败了，而这就是失败的`number`结果。”
+
+那么，如果你有一个值存在某个变量中，而且你想要测试它是否是这个特殊的失败数字`NaN`，你也许认为你可以直接将它与`NaN`本身比较，就像你能对其他
+值做的那样，比如`null`和`undefined`。不是这样。
+
+```javascript
+var a = 2 / 'foo'
+a == NaN // false
+a === NaN // false
+```
+
+`NaN`是一个非常特殊的值，它从来不会等于另一个`NaN`值（也就是，它从来不等于它自己）。实际上，它是唯一一个不具有反射性的值（没有恒等性
+`x === x`）。所以，`NaN !== NaN`。有点奇怪，对吧？
+
+那么，如果不能与`NaN`进行比较（因为这种比较总是失败），我们该如何测试它呢？
+
+```javascript
+var a = 2 / 'foo'
+
+isNaN(a) // true
+```
+
+够简单的吧？我们使用称为`isNaN(..)`的内建全局工具，它告诉我们这个值是否是`NaN`。问题解决了！
+
+别高兴的太早。
+
+`isNaN(..)`工具有一个重大缺陷。它似乎过于按照字面的意思（“不是一个数字”）去理解`NaN`的含义了——它的工作基本上：“测试这个传进来的东西是不
+是一个`number`或者是一个`number`”。但这不是十分准确。
+
+```javascript
+var a = 2 / 'foo'
+var b = 'foo'
+
+a // NaN
+b // 'foo'
+
+window.isNaN(a) // true
+window.isNaN(b) // true  -- 噢！
+```
+
+很明显，`"foo"`根本*不是一个`number`*，但它也绝不是一个`NaN`值！这个 bug 从最早开始的时候就存在于 JS 中了（存在超过了十九年的坑）。
+
+在 ES6 中，终于提供了一个替代它的工具：`Number.isNaN(..)`。有一个简单的填补，可以让你即使是在 ES6 前的浏览器中安全地检查`NaN`值：
+
+```javascript
+if (!Number.isNaN) {
+  Number.isNaN = function (n) {
+    return typeof n === 'number' && window.isNaN(n)
+  }
+}
+
+var a = 2 / 'foo'
+var b = 'foo'
+
+Number.isNaN(a) // true
+Number.isNaN(b) // false -- 咻！
+```
+
+实际上，通过利用`NaN`与它自己不相等这个特殊的事实，我们可以更简单地实现`Number.isNaN(..)`的填补。在整个语言中`NaN`是唯一一个这样的值；
+其他的值都总是**等于它自己**。
+
+所以：
+
+```javascript
+if (!Number.isNaN) {
+  Number.isNaN = function (n) {
+    return n !== n
+  }
+}
+```
+
+怪吧？但是好用！
+
+不管有意还是无意，在许多真实世界的 JS 程序中`NaN`可能是一个现实的问题。使用`Number.isNaN(..)`（或者它的填补）这样的可靠测试来正确地识别它
+们是一个非常好的主意。
+
+如果你正在程序中仅使用`isNaN(..)`，悲惨的现实是你的程序*有 bug*，即便是你还没有被它咬到！
+
+#### 无穷
+
+来自于像 C 这样的传统编译型语言的开发者，可能习惯于看到编译器错误或者是运行时异常，比如对这样一个操作给出的“除数为 0”：
+
+```javascript
+var a = 1 / 0
+```
+
+然而在 JS 中，这个操作是明确定义的，而且它的结果是值`Infinity`（也就是`Number.POSITIVE_INFINITY`）。意料之中的是：
+
+```javascript
+var a = 1 / 0 // Infinity
+var b = -1 / 0 // -Infinity
+```
+
+如你所见，`-Infinity`（也就是`Number.NEGATIVE_INFINITY`）是从任一个被除数负（不是两个都是负数！）的除 0 操作的来的。
+
+JS 是用有限的数字表现形式（IEEE 754 浮点，我们早先讨论过），所以和单纯的数学相比，它看起来甚至在做加法和减法这样的操作时都有可能溢出，这样的
+情况下你将会得到`Infinity`或`-Infinity`。
+
+例如：
+
+```javascript
+var a = Number.MAX_VALUE // 1.7976931348623157e+308
+a + a // Infinity
+a + Math.pow(2, 970) // Infinity
+a + Math.pow(2, 969) // 1.7976931348623157e+308
+```
+
+根据语言规范，如果一个像加法这样的操作得到一个太大而不能表示的值，IEEE 745“就近舍入”模式将会指明结果应该是什么。所以粗略的意义上，
+`Number.MAX_VALUE + MATH.pow(2, 969)`比起`Infinity`更接近于`Number.MAX_VALUE`，所以它“向下舍入”，而
+`Number.MAX_VALUE + MATH.pow(2, 970)`距离`Infinity`更近，所以它“向上舍入”。
+
+如果你对此考虑的太多，它会使你头疼。所以别想了。我是认真的，停！
+
+一旦你溢出了任意一个*无限值*，那么，就没有回头路了。换句最有诗意的话说，你可以从有限迈向无限，但不能从无限回到有限。
+
+“无限除以无限等于什么”，这简直是一个哲学问题。我们幼稚的大脑可能会说“1”或者“无限”。事实表明它们都不对。在数学上和在 JS 中，`Infinity / Infinity`
+不是一个有定义的操作。在 JS 中，它的结果为`NaN`。
+
+一个有限的正`number`除以`Infinity`呢？简单！`0`。那一个有限的负`number`除以`infinity`呢？接着往下读！
+
+#### 零
+
+虽然这可能使有数学头脑的读者困惑，但 JS 拥有普通的零`0`（也称为正零`+0`）*和*一个负零`-0`。在我们讲解为什么`-0`存在之前，我们应该考察 JS
+如何处理它，因为它可能十分令人困惑。
+
+除了使用字面量`-0`指定，负零还可以从特定的数学操作中得出。比如：
+
+```javascript
+var a = 0 / -3 // -0
+var b = 0 * -3 // -0
+```
+
+加法和减法无法得出负零。
+
+在开发者控制台中考察一个负的零，经常显示为`-0`，然而直到最近这才是一个常见情况，所以一些你可能遇到的老版本浏览器也许依然将它报告位`0`。
+
+```javascript
+var a = 0 / -3
+
+// 至少（有些浏览器）控制台是对的
+a // -0
+
+a.toString() // '0'
+a + '' // '0'
+String(a) // '0'
+
+// 奇怪的是，就连JSON也加入了骗局之中
+JSON.stringify(a) // '0'
+```
+
+有趣的是，反向操作（从`string`到`number`）不会撒谎：
+
+```javascript
+;+'-0' // -0
+Number('-0') // -0
+JSON.parse('-0') // -0
+```
+
+**警告：** 当你观察的时候，`JSON.stringify( -0 )`产生`"0"`显得特别奇怪，因为它与反向操作不符：`JSON.parse("-0")`将像你期待地那样报告`-0`。
+
+出了一个负零的字符串化会欺骗性地隐藏它实际的值外，比较操作符也被设定为（有意地）_要说谎_。
+
+```javascript
+var a = 0
+var b = 0 / -3
+
+a == b // true
+0 == -0 // true
+
+a === b // true
+0 === -0 // true
+
+0 > -0 // false
+a > b // false
+```
+
+很明显，如果你想在你的代码中区分`-0`和`0`，你就不能仅依靠开发者控制台的输出，你必须更聪明一些：
+
+```javascript
+function isNegZero(n) {
+  n = Number(n)
+  return n === 0 && 1 / n === -Infinity
+}
+
+isNegZero(-0) // true
+isNegZero(0 / -3) // true
+isNegZero(0) // false
+```
+
+那么，除了学院派的细节以外，我们为什么需要一个负零呢？
+
+在一些应用程序中，开发者使用值的大小来表示一部分信息（比如动画中每一帧的速度），而这个`number`的符号来表示另一部分信息（比如移动的方向）。
+
+在这些应用程序中，举例来说，如果一个变量的值变成了 0，而它丢失了符号，那么你就丢失了它是从哪个方向移到 0 的信息。保留零的符号避免了潜在的意外信息丢失。
+
+### 特殊等价
+
+## 值与引用
+
+## 复习
