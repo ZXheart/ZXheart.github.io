@@ -3,6 +3,7 @@
   // "prettier.enable": false,
   "prettier.enable": true,
   "prettier.printWidth": 160,
+  "prettier.proseWrap": "preserve",
 
   // Auto fix
   // "editor.codeActionsOnSave": {
@@ -25,17 +26,5 @@
   ],
 
   // Enable eslint for all supported languages
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "typescriptreact",
-    "vue",
-    "html",
-    "json",
-    "jsonc",
-    "yaml",
-    "toml",
-    "markdown"
-  ]
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact", "vue", "html", "json", "jsonc", "yaml", "toml", "markdown"]
 }

@@ -1,0 +1,10 @@
+{
+    "markdown note": {
+        "prefix": "mdnote",
+        "body": [
+            "> [!note]"
+        ],
+        "description": "markdown note",
+        "scope": "markdown"
+    }
+}
