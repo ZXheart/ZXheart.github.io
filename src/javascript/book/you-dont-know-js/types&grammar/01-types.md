@@ -83,6 +83,7 @@ typeof null === 'object' // true
 
 如果你想要使用`null`类型来测试`null`值，你需要一个符合条件：
 
+<!-- prettier-ignore -->
 ```javascript
 var a = null
 
