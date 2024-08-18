@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      function fakeJoin(arr, connector) {
+        var str = ''
+        for (var i = 0; i < arr.length; i++) {
+          if (i > 0) {
+            str += connector
+          }
+          if (arr[i] !== undefined) {
+            str += arr[i]
+          }
+        }
+        return str
+      }
+
+      var a = new Array(3)
+      const aa = fakeJoin(a, '-') // "--"
+      console.log('aa', aa)
+      var b = [undefined, undefined, undefined]
+      const bb = fakeJoin(b, '-') // "--"
+      console.log('bb', bb)
+
+      var g = Array.apply(null, { length: 3 })
+      console.log('g', g) // [undefined, undefined, undefined]
+
+      function isThisCool(arr, fn, rx) {
+        arr = arr || Array.prototype
+        fn = fn || Function.prototype
+        rx = rx || RegExp.prototype
+        // console.log(rx, typeof rx, rx.test('ABC'))
+        // console.log(typeof rx, rx, rx.prototype, Object.prototype.toString.call(rx))
+        return rx.test(arr.map(fn).join(''))
+      }
+
+      isThisCool() // true
+
+      const res = isThisCool(
+        ['a', 'b', 'c'],
+        function (v) {
+          return v.toUpperCase()
+        },
+        /D/
+      ) // false
+      console.log('res', res)
+    </script>
+  </body>
+</html>
