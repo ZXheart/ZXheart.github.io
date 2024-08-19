@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const obj = {
+        a: [1, 2, 3],
+        b: 'jack',
+      }
+
+      const res = JSON.stringify(obj, (key, value) => {
+        if (typeof value === 'object') {
+          return value
+        } else {
+          return undefined
+        }
+      })
+      console.log('res', res) // {"a":[1,2,3]};
+    </script>
+  </body>
+</html>

@@ -33,14 +33,15 @@
       function isThisCool(arr, fn, rx) {
         arr = arr || Array.prototype
         fn = fn || Function.prototype
-        rx = rx || RegExp.prototype
+        // rx = rx || RegExp.prototype
+        rx = rx || /(?:)/
         // console.log(rx, typeof rx, rx.test('ABC'))
         // console.log(typeof rx, rx, rx.prototype, Object.prototype.toString.call(rx))
         return rx.test(arr.map(fn).join(''))
       }
 
-      isThisCool() // true
-
+      const res1 = isThisCool() // true
+      console.log('res1', res1)
       const res = isThisCool(
         ['a', 'b', 'c'],
         function (v) {

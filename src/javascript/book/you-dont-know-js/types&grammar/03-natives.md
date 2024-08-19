@@ -429,7 +429,8 @@ Object.getOwnPropertySymbols(a) // [Symbol(my own symbol)]
 虽然 Symbol 实际上不是私有的（在对象上使用`Object.getOwnPropertySymbols(..)`反射，揭示了 Symbol 其实是相当公开的），但是它们的主要用途可能是
 私有属性，或者类似的特殊属性。对于大多数开发者，他们也许会在属性名上加入`_`下划线前缀，这经常在惯例上表示：“这是一个私有的/特殊的/内部的属性，别碰！”
 
-> [!NOTE] > `Symbol`_不是_`object`，它们是简单的基本标量。
+> [!NOTE]
+> `Symbol`_不是_`object`，它们是简单的基本标量。
 
 ### 原生类型原型
 
@@ -498,12 +499,14 @@ Array.prototype.length = 0
 function isThisCool(arr, fn, rx) {
   arr = arr || Array.prototype
   fn = fn || Function.prototype
-  rx = rx || RegExp.prototype
+  rx = rx || RegExp.prototype // MD，难道当年这样真的能运行？
+  // 这里这样是合理的： rx = rx || /(?:)/
 
   return rx.test(arr.map(fn).join(''))
 }
 
-isThisCool() // true TMD 这里会报错，先记下来，得睡觉了
+isThisCool() //  TMD 这里会报错； RegExp.prototype确实有test方法，但它只能RegExp实例调用
+// TypeError: Method RegExp.prototype.exec called on incompatible receiver
 
 isThisCool(
   ['a', 'b', 'c'],
