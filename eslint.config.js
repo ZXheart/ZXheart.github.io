@@ -13,6 +13,12 @@ export default antfu({
     },
   },
   markdown: false,
+  typescript: {
+    overrides: {
+      'no-console': 'off',
+    },
+  },
+
   // {
   //   overrides: {
   //     'no-unused-vars': 'off',
