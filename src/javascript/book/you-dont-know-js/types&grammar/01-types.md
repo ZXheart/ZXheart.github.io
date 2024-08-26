@@ -6,7 +6,7 @@
 
 大多数开发者会说，动态语言（就像 JS）没有*类型*。让我们看看 ES5.1 语言规范 [在这个问题上是怎么说的：](http://www.ecma-international.org/ecma-262/5.1/)
 
-> 在本语言规范中的算法所操作的每一个值都有一种关联的类型。可能的值的类型就是那些在本条款中定义的类型。类型还进一步被分为 ECMAScript 语言类型和语言规范类型
+> 在本语言规范中的算法所操作的每一个值都有一种关联的类型。可能的值的类型就是那些在本条款中定义的类型。类型还进一步被分为 ECMAScript 语言类型和语言规范类型。
 
 > 一个 ECMAScript 语言类型对应 ECMAScript 程序员使用 ECMAScript 语言直接操作的值。ECMAScript 语言类型有 Undefined、Null、Boolean、String、Number 和 Object。
 
