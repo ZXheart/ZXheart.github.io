@@ -19,6 +19,79 @@
       var a = 2
 
       bar()
+
+      function fakeJoin(arr, connector) {
+        var str = ''
+        for (var i = 0; i < arr.length; i++) {
+          if (i > 0) {
+            str += connector
+          }
+          if (i in arr) {
+            str += arr[i]
+          }
+        }
+        return str
+      }
+      const bb = []
+      bb.length = 3
+      // bb [empty, empty, empty]
+
+      const dd = Array.apply(null, { length: 3 })
+
+      const ee = [null, null, null]
+
+      Array.prototype._join = function (...args) {
+        if (this.hasOwnProperty('length') === false) {
+          throw new TypeError('CreateListFromArrayLike called on object without a length property')
+        }
+
+        if (this.length === 0) {
+          return ''
+        }
+        if (this.length === 1) {
+          if (this[0] === undefined || this[0] === null) {
+            return ''
+          }
+          if (typeof this[0] === 'object') {
+            return this[0].toString()
+          }
+          return '' + this[0]
+        }
+
+        const separator = args[0] || ','
+        let result = ''
+        for (let i = 0; i < this.length; i++) {
+          // null 和 undefined 都会被判断为 true
+          if (this[i] === null || this[i] === undefined) {
+            if (i > 0) {
+              result += separator
+            }
+          } else {
+            if (i > 0) {
+              result += separator
+            }
+            // 判断空槽
+            // if (i in this) {
+            result += this[i]
+            // }
+          }
+        }
+        return result
+      }
+
+      console.log('fakeJoin', fakeJoin(bb, '-'))
+      console.log('fakeJoin', fakeJoin(dd, '-'))
+      console.log('fakeJoin', fakeJoin(ee, '-'))
+
+      console.log('join', bb.join('-'))
+      console.log('join', dd.join('-'))
+      console.log('join', ee.join('-'))
+
+      console.log('_join', bb._join('-'))
+      console.log('_join', dd._join('-'))
+      console.log('_join', ee._join('-'))
+
+      console.log('_join', [1, 2, { name: 9 }]._join('-'))
     </script>
   </body>
 </html>
