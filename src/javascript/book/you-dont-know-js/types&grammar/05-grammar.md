@@ -1112,3 +1112,348 @@ TDZ 指的是代码中还不能使用变量引用的地方，因为它还没有�
 ```
 
 ## 函数参数值
+
+另一个违反 TDZ 的例子可以在 ES6 的参数默认值（参见本系列的*ES6 与未来*）中看到：
+
+```javascript
+var b = 3
+
+function foo(a = 42, b = a + b + 5) {
+  // ..
+}
+```
+
+在赋值中的`b`引用将在参数`b`的 TDZ 中发生（不会被拉到外面的`b`引用），所以它会抛出一个错误。然而，赋值中的`a`是没有问题的，因为那时参数`a`的 TDZ 已经过去了。
+
+当使用 ES6 的参数默认值时，如果你省略一个参数，或者你在它的位置上传递一个`undefined`值的话，就会应用这个默认值。
+
+```javascript
+function foo(a = 42, b = a + 1) {
+  console.log(a, b)
+}
+
+foo() // 42 43
+foo(undefined) // 42 43
+foo(5) // 5 6
+foo(void 0, 7) // 42 7
+foo(null) // null 1
+```
+
+> [!NOTE]
+> 在表达式`a + 1`中`null`被强制转换为值`0`。更多信息参考第四章。
+
+从 ES6 参数默认值的角度看，忽略一个参数和传递一个`undefined`值之间没有区别。然而，有一个办法可以在一些情况下探测到这种区别：
+
+```javascript
+function foo(a = 42, b = a + 1) {
+  console.log(arguments.length, a, b, arguments[0], arguments[1])
+}
+
+foo() // 0 42 43 undefined undefined
+foo(10) // 1 10 11 10 undefined
+foo(10, undefined) // 2 10 11 10 undefined
+foo(10, null) // 2 10 null 10 null
+```
+
+即便参数默认值被应用到了参数`a`和`b`上，但是如果没有参数传入这些值槽，参数`arguments`也不会有任何元素。
+
+反过来，如果你明确地传入一个`undefined`参数，在数组`arguments`中就会为这个参数存在一个元素，但它将是`undefined`，并且与同一值槽中的被命名参数将被提供的默认值不同。
+
+虽然 ES6 参数默认值会在数组`arguments`的值槽和相应的命名参数变量之间造成差异，但是这种脱节也会以诡异的方式发生在 ES5 中：
+
+```javascript
+function foo(a) {
+  a = 42
+  console.log(arguments[0])
+}
+
+foo(2) // 42（链接了）
+foo() // undefined（没链接）
+```
+
+如果你传递一个参数，`arguments`的值槽和命名的参数总是链接到同一个值上。如果你省略这个参数，就没有这样的链接会发生。
+
+但是在`strict`模式下，这种链接无论怎样都不存在了：
+
+```javascript
+function foo(a) {
+  'use strict'
+  a = 42
+  console.log(arguments[0])
+}
+
+foo(2) // 2（没链接）
+foo() // undefined（没链接）
+```
+
+依赖于这样的链接几乎可以肯定是一个坏主意，而且事实上这种链接本身是一种抽象泄露，它暴露了引擎的底层实现细节，而不是一个合适的设计特性。
+
+`arguments`数组的使用已经废弃了（特别是被 ES6 `...`剩余参数取代以后 —— 参见本系列*ES6 与未来*），但这不意味着它都是不好的。
+
+在 ES6 之前，要得到向另一个函数传递的所有参数值的数组，`arguments`是唯一的办法，它被证实十分有用。你也可以安全的混用被命名参数和`arguments`数组，只要你遵循一个简单的
+规则：**绝不同时引用一个被命名参数*和*它相应的`arguments`值槽**。如果你能避开那种错误的实践，你就永远也不会暴露这种易泄漏的链接行为。
+
+```javascript
+function foo(a) {
+  console.log(a + arguments[1]) // 安全！
+}
+
+foo(10, 32) // 42
+```
+
+## `try..finally`
+
+你可能很熟悉`try..catch`块儿是如何工作的。但是你有没有停下来考虑过可以与之成对出现的`finally`字句呢？事实上，你有没有意识到`try`只要求`catch`和`finally`两者之一，虽然如果有需要它们可以同时出现。
+
+在`finally`子句中的代码*总是*运行的（无论发生什么），而且它总是在`try`（和`catch`，如果存在的话）完成后立即运行，在其他任何代码之前。从一种意义上说，
+你似乎可以认为`finally`子句中的代码是一个回调函数，无论块儿中的其他代码如何运行，它总是被调用。
+
+那么如果在`try`子句内部有一个`return`语句会将怎样？很明显它将返回一个值，对吧？但是调用端代码是在`finally`之前还是之后才收到这个值呢？
+
+```javascript
+function foo() {
+  try {
+    return 42
+  } finally {
+    console.log('hello')
+  }
+
+  console.log('never runs')
+}
+
+console.log(foo())
+// hello
+// 42
+```
+
+`return 42`立即运行，它设置好`foo()`调用的完成值。这个动作完成了`try`子句而`finally`子句接下来立即执行。只有这之后`foo()`函数才算完成，所以被返回的完成值交给`console.log(..)`语句使用。
+
+对于`try`内部的`throw`来说，行为是完全相同的：
+
+```javascript
+function foo() {
+  try {
+    throw 42
+  } finally {
+    console.log('hello')
+  }
+
+  console.log('never runs')
+}
+
+console.log(foo())
+// hello
+// Uncaught Exception: 42
+```
+
+现在，如果一个异常从`finally`子句中被抛出（偶然的或有意的），它将会作为这个函数的主要完成值进行覆盖。如果`try`块儿中的前一个`return`已经设置好了这个函数的完成值，那么这个值就会被抛弃。
+
+```javascript
+function foo() {
+  try {
+    return 42
+  } finally {
+    throw 'Oops!'
+  }
+
+  console.log('never runs')
+}
+
+console.log(foo())
+// Uncaught Exception: Oops!
+```
+
+其他的诸如`continue`和`break`这样的非线性控制语句表现出与`return`和`throw`相似的行为是没什么令人吃惊的：
+
+```javascript
+for (var i = 0; i < 10; i++) {
+  try {
+    continue
+  } finally {
+    console.log(i)
+  }
+}
+
+// 0 1 2 3 4 5 6 7 8 9
+```
+
+`console.log(i)`语句在`continue`语句引起的每次循环迭代的末尾运行。然而，它依然是运行在更新语句`i++`之前的，这就是为什么打印出的值是`0~9`而非`1~10`。
+
+> [!NOTE]
+> ES6 在 generator（参见本系列的*异步与性能*）中增加了`yield`语句，generator 从某些方面可以看作是中间的`return`语句。然而，和`return`不同的是，一个`yield`在 generator 被推进前不会
+> 完成，这意味着`try { .. yield .. }`还没有完成。所以附着在其上的`finally`子句将不会和它的`return`一起时那样，在`yield`之后立即运行。
+
+一个在`finally`内部的`return`有着覆盖前一个`try`或`catch`子句中的`return`的特殊能力，但是仅在`return`被明确调用的情况下：
+
+```javascript
+function foo() {
+  try {
+    return 42
+  } finally {
+    // 这里没有 `return ..`，所以返回值不会被覆盖
+  }
+}
+
+function bar() {
+  try {
+    return 42
+  } finally {
+    return // 覆盖前面的 `return 42`
+  }
+}
+
+function baz() {
+  try {
+    return 42
+  } finally {
+    return 'Hello' // 覆盖前面的 `return 42`
+  }
+}
+
+foo() // 42
+bar() // undefined
+baz() // 'Hello'
+```
+
+一般来说，在函数中省略`return`、`return;`或者`return undefined;`是相同的，但是在一个`finally`块儿内部，`return`的省略不是用一个`return undefined`覆盖；它只是让前一个`return`继续生效。
+
+事实上，如果将打了标签的`break`（本章早先讨论过）与`finally`相组合，我们真的可以制造一种疯狂：
+
+```javascript
+function foo() {
+  bar: {
+    try {
+      return 42
+    } finally {
+      break bar
+    }
+  }
+
+  console.log('Crazy')
+
+  return 'Hello'
+}
+
+console.log(foo())
+// Crazy
+// Hello
+```
+
+但是...别这么做。说真的。使用一个`finally` + 打了标签的`break`实质上取消了`return`，这是你在尽最大的努力制造令人困惑的代码。我打赌没有任何注释可以拯救这段代码。
+
+## `Switch`
+
+让我们简单探索一下`switch`语句，某种`if..else if..else..`语句链的语法缩写。
+
+```javascript
+switch (a) {
+  case 2:
+    // do something
+    break
+  case 42:
+    // do another thing
+    break
+  default:
+  // fallback to here
+}
+```
+
+如你所见，它对`a`求值一次，然后将结果值与每个`case`表达式进行匹配（这里只是一些简单的值的表达式）。如果找到一个匹配，就会开始执行那个匹配的`case`，
+它将会持续执行直到遇到一个`break`或者遇到`switch`块儿的末尾。
+
+这些可能不会令你吃惊，但是关于`switch`，有几个你以前可能从没注意过的奇怪的地方。
+
+首先，在表达式`a`和每一个`case`表达式之间的匹配与`===`算法（见第四章）是相同的。`switch`经常在`case`语句中使用绝对值，就像上面展示的，因此严格匹配是恰当的。
+
+然而，你也许希望宽松等价（也就是`==`，见第四章），而这么做你需要“黑”一下`switch`语句：
+
+```javascript
+var a = '42'
+
+switch (true) {
+  case a == 10:
+    console.log('10 or "10"')
+    break
+  case a == 42:
+    console.log('42 or "42"')
+    break
+  default:
+  // never gets here
+}
+// 42 or "42"
+```
+
+这可以工作是因为`case`子句可以拥有任何表达式（不仅是简单值），这意味着它将用这个表达式的结果与测试表达式（`true`）进行严格匹配。因为这里`a == 42`的结果为`true`，所以匹配成功。
+
+尽管是`==`，但`switch`的匹配本身依然是严格的，在这里是`true`和`true`之间。如果`case`表达式得出 truthy 的结果而不是严格的`true`，它就不会工作。例如如果在你的表达式中
+使用`||`或`&&`这样的“逻辑操作符”，这就可能咬到你：
+
+```javascript
+var a = 'hello world'
+var b = 10
+
+switch (true) {
+  case a || b == 10:
+    // never gets here
+    break
+  default:
+    console.log('Oops')
+}
+// Oops
+```
+
+因为`(a || b == 10)`的结果是`"hello world"`而不是`true`，所以严格匹配失败了。这种情况下，修改的方法是强制表达式明确成为一个`true`或`false`，
+比如`case !!(a || b == 10):`（见第四章）。
+
+最后，`default`子句是可选的，而且它不一定非要位于末尾（虽然那是一种强烈的惯例）。即便是在`default`子句中，是否遇到`break`的规则也是一样的：
+
+<!-- prettier-ignore -->
+```javascript
+var a = 10
+
+switch (a) {
+  case 1:
+  case 2:
+    // never gets here
+  default:
+    console.log('default')
+  case 3:
+    console.log('3')
+    break
+  case 4:
+    console.log('4')
+}
+// default
+// 3
+```
+
+> [!NOTE]
+> 就像我们前面讨论的打标签的`break`，`case`子句内部的`break`也可以被打标签。
+
+这段代码的处理方式是，它首先通过所有的`case`子句，没有找到匹配，然后它回到`default`子句开始执行。因为这里没有`break`，它会继续走进已经被跳过的块儿`case 3`，在遇到那个`break`后才会停止。
+
+虽然这种有些迂回的逻辑在 JS 中是明显可能的，但是它几乎不可能制造出合理或易懂的代码。要对你自己是否想要创建这种环状的逻辑流程保持怀疑，如果你真的想要这么做，确保你留下了大量的代码注释来解释你想要做什么！
+
+## 复习
+
+JS 文法有相当多的微妙之处，我们作为开发者应当比平时多花一点儿时间来关注它。一点儿努力可以帮助你巩固对这个语言更深层次的知识。
+
+语句和表达式在英语中有类似的概念 —— 语句就像句子，而表达式就像短语。表达式可以是纯粹的/自包含的，或者它们可以有副作用。
+
+JS 文法层面的语义用法规则（也就是上下文），是在纯粹的语法之上的。例如，用于你程序中不同地方的`{ }`可以意味着块儿，`object`字面量，（ES6）解构语句，或者（ES6）被命名的函数参数。
+
+JS 操作符都有严格定义的优先级（哪一个操作符首先结合）和结合性（多个操作符表达式如何隐含的分组）规则。一旦你学会了这些规则，你就可以自己决定优先级/组合型是否是为了它们自己有利
+而*过于明确*，或是它们是否会对编写更短，更干净的代码有所助益。
+
+ASI（自动分号插入）是一种内建在 JS 引擎中的解析器纠错机制，它允许 JS 引擎在特定的环境下，在需要`;`但是被省略了的地方，并且插入可以纠正解析错误时，插入一个`;`。有一场争论是关于这种
+行为是否暗示着大多数`;`都是可选的（而且为了更干净的代码可以/应当省略），或者是否它意味着省略它们是在制造 JS 引擎帮你扫清的错误。
+
+JS 有几种类型的错误，但很少有人知道它有两种类别的错误：“早期”（编译器抛出的不可捕获的）和“运行时”（可以`try..catch`的）。所有在程序运行之前就使它停止的语法错误都明显是早期错误，但也有一些别的错误。
+
+函数参数值与它们正式声明的命名参数之间有一种有趣的联系。明确地说，如果你不小心，`arguments`数组会有一些泄露抽象行为的坑。尽可能避开`arguments`，但如果你必须使用它，那就设法避
+免同时使用`arguments`中带有位置的值槽，和相同参数的命名参数。
+
+附着在`try`（或`try..catch`）上的`finally`在执行处理顺序上提供了一些非常有趣的能力。这些能力中的一些可能很有帮助，但是它也可能制造许多困惑，特别是在与打了标签的块儿组合使用时。
+像往常一样，为了更好更干净的代码而使用`finally`，不是为了显得更聪明或更糊涂。
+
+`switch`为`if..else if..`语句提供了一个不错的缩写形式，但是要小心许多常见的关于它的简化假设。如果你不小心，会有几个奇怪的地方拌到你，但是`switch`手上也有一些隐藏的高招！
