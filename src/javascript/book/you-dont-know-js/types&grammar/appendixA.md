@@ -224,8 +224,207 @@ if (!Array.prototype.foobar) {
 
 ## `<script>`
 
+大多数通过浏览器使用的网站/应用程序都将他们的代码包含在一个以上的文件中，在一个页面中含有几个或好几个分别加载这些文件的`<script src=..></script>`元素，
+甚至几个内联的`<script> .. </script>`元素也很常见。
+
+但这些分离的文件/代码段是组成分离的程序，还是综合为一个 JS 程序？
+
+（也许令人吃惊）现实是它们在极大程度上，但不是全部，像独立的 JS 那样运行。
+
+它们所*共享*的一个东西是独立的`global`对象（在浏览器中是`window`），这意味着多个文件可以将它们的代码追加到这个共享的名称空间中，而且它们都是可以交互的。
+
+所以，如果一个`script`元素定义了一个全局函数`foo()`，当第二个`script`运行时，它就可以访问并调用`foo()`，就好像它自己已经定义了这个函数一样。
+
+但是全局变量作用域*提升*（参见本系列的*作用域与闭包*）不会跨越这些界限发生，所以下面的代码将不能工作（因为`foo()`的声明还没有被声明过），
+无论它们是内联的`<script> .. </script>`元素还是外部加载的`<script src=..></script>`文件：
+
+```html
+<script>
+  foo()
+</script>
+
+<script>
+  function foo() {
+    //..
+  }
+</script>
+```
+
+但是这两个都将*可以*工作：
+
+```html
+<script>
+  foo()
+  function foo() {
+    //..
+  }
+</script>
+```
+
+或者：
+
+```html
+<script>
+  function foo() {
+    //..
+  }
+</script>
+
+<script>
+  foo()
+</script>
+```
+
+另外，如果在一个`script`元素（内联或者外部的）中发生了一个错误，一个分离的独立的 JS 程序将会失败并停止，但是人和后续的`script`都将会（依然在共享的`global`中）畅通无阻地运行。
+
+你可以在你的代码中动态地创建`script`元素，并将它们插入到页面的 DOM 中，它们之中的代码基本上将会像从一个分离的文件中普通的加载那样运行：
+
+```javascript
+var greeting = 'Hello World'
+
+var el = document.createElement('script')
+
+el.text =
+  'function foo(){ alert(greeting) } \
+  setTimeout(foo, 1000)'
+
+document.body.appendChild(el)
+```
+
+> [!NOTE]
+> 当然，如果你试一下上面的代码段并将`el.src`设置为某些文件的 URL，而非将`el.text`设置为代码内容，你就会动态地创建一个外部加载的`<script src=..></script>`元素。
+
+内联代码块中的代码，与在外部文件中的相同的代码之间的一个不同之处是，在内联的代码块中，字符`</script>`的序列不能一起出现，因为（无论它在哪里出现）它将会被翻译为代码块的末尾。所以，小心这样的代码：
+
+<!-- prettier-ignore -->
+```html
+<script>
+  var code="<script>alert('hello world')</script>"
+</script>
+```
+
+它看起来无害，但是在`string`字面量中出现在`</script>`将会不正常地终结 script 块，造成一个错误。绕过它最常见的一个方法是：
+
+```javascript
+var a = '</scr' + 'ipt>'
+```
+
+另外要小心的是，一个外部文件中的代码将会根据和文件一起被提供（或默认的）的字符集编码（UTF-8、ISO-8859-8 等等）来翻译，但内联在你 HTML 页面中的一个`script`元素中的相同代码将会根据这个
+页面的（或它默认的）字符集编码来翻译。
+
+> [!WARNING]
+>
+> `charset`属性在内联 script 元素中不能工作。
+
+关于内联`script`元素，另一个被废弃的做法是在内联代码的周围引入 HTML 风格或 X(HT)ML 风格的注释，就像：
+
+```html
+<script>
+  <!--
+  alert('hello world')
+  //-->
+</script>
+
+<script>
+  <!--//--> <![CDATA[//><!--
+  alert('hello world')
+  //--><!]]>
+</script>
+```
+
+这两种东西现在完全是不必要的了，所以如果你还在这么做，停下！
+
+> [!NOTE]
+> 实际上纯粹是因为这种老技术，JS 才把`<!--`和`-->`（HTML 风格的注释）两者都被规定为合法的单行注释分隔符（`var x = 2; <!-- valid comment`和`-->another valid lin comment`）。
+> 永远不要使用它们。
+
 ## 保留字
+
+ES5 语言规范在第 7.6.1 部分中定义了一套“保留字”，它们不能被用作独立的变量名。技术上讲，有四个类别：“关键字”，“未来保留字”，`null`字面量，以及`true`/`false`布尔字面量。
+
+像`function`和`switch`这样的关键字是显而易见的。像`enum`之类的未来保留字，虽然它们中的许多（`class`、`extends`等等）现在都已经实际被 ES6 使用了；但还有另外一些像`interface`之类
+的仅在 strict mode 下的保留字。
+
+StackOverflow 用户“art4theSould”创造性地将这些保留字编成了一首小诗（[:link:](https://stackoverflow.com/questions/26255/reserved-keywords-in-javascript/12114140)）:
+
+> Let this long package float,
+> Goto private class if short.
+> While protected with debugger case,  
+> Continue volatile interface.
+> Instanceof super synchronized throw,
+> Extends final export throws.
+
+> Try import double enum?  
+> -False, boolean, abstract function,
+> Implements typeof transient break!
+> Void static, default do,  
+> Switch int native new.
+> Else, delete null public var
+> In return for const, true, char
+> …Finally catch byte.
+
+> [!NOTE]
+> 这首诗包含 ES3 中的保留字（`byte`、`long`等等），它们在 ES5 中不再被保留了。
+
+在 ES5 之前，这些保留字也不能被用于对象字面量中的属性名或键，但这种限制已经不复存在了。
+
+所以，这是不允许的：
+
+```javascript
+var import ="42"
+```
+
+但这是允许的：
+
+```javascript
+var obj = { import: '42' }
+console.log(obj.import)
+```
+
+你应当小心，有些老版本的浏览器（主要是老 IE）没有完全地遵守这些规则，所以有些保留字用作对象属性名的地方仍然会造成问题。小心地测试所有你支持的浏览器环境。
 
 ## 实现的限制
 
+Js 语言规范没有在诸如函数参数值的个数，或者字符串字面量的长度上做出随意的限制，但是由于不同引擎的实现细节，无论如何这些限制是存在的。
+
+例如：
+
+```javascript
+function addAll() {
+  var sum = 0
+  for (var i = 0; i < arguments.length; i++) {
+    sum += arguments[i]
+  }
+  return sum
+}
+
+var nums = []
+for (var i = 1; i < 100000; i++) {
+  nums.push(i)
+}
+
+addAll(2, 4, 6) // 12
+addAll.apply(null, nums) // 应该是：499950000
+```
+
+在某些 JS 引擎中，你将会得到正确答案`499950000`，但在另一些引擎中（比如 Safari 6.X），你会得到一个错误：“RangeError： Maximum call stack size exceeded.”
+
+一直存在的其他限制的例子：
+
+- 在字符串字面量（不是一个字符串变量）中允许出现的最大字符个数
+- 在一个函数调用的参数值中可以发送的数据的大小（字节数，也称为栈的大小）
+- 在一个函数声明中的参数数量
+- 没有经过优化的调用栈最大深度（例如，使用递归时）：从一个函数到另一个函数的调用链能有多长
+- JS 程序可以持续运行并阻塞浏览器的秒数
+- 变量名的最大长度
+- ...
+
+遭遇这些限制不是非常常见，但你应当知道这些限制存在并确实会发生，而且重要的是它们因引擎不同而不同。
+
 ## 复习
+
+我们知道并且可以依赖于这样的事实：JS 语言本身拥有一个标准，而且这个标准可预见的被所有现代浏览器/引擎实现了。这是非常好的一件事！
+
+但是 JS 几乎不会与世隔绝的运行。它会运行在混合了第三方库的环境中运行，而且有时甚至会在不同浏览器中不同的引擎/环境中运行。
+
+对这些问题多加注意，会改进你代码的可靠性和健壮性。
