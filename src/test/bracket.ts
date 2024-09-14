@@ -55,3 +55,5 @@ console.log('isValid', isValid('(]')) // false;
 
 const res = isValidVersion1('([)]') // true
 console.log('res', res)
+
+export {}

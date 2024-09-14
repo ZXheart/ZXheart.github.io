@@ -109,6 +109,19 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
                 { text: 'mixed environment JS', link: 'book/you-dont-know-js/types&grammar/appendixA' },
               ],
             },
+            {
+              text: 'async & performance',
+              collapsed: true,
+              items: [
+                { text: 'asynchrony', link: 'book/you-dont-know-js/async&performance/01-asynchrony' },
+                { text: 'callbacks', link: 'book/you-dont-know-js/async&performance/02-callbacks' },
+                { text: 'promise', link: 'book/you-dont-know-js/async&performance/03-promise' },
+                { text: 'generator', link: 'book/you-dont-know-js/async&performance/04-generator' },
+                { text: 'program performance', link: 'book/you-dont-know-js/async&performance/05-program-performance' },
+                { text: 'benchmarking & tuning', link: 'book/you-dont-know-js/async&performance/06-benchmarking-tuning' },
+                { text: 'appendixA tail call optimization', link: 'book/you-dont-know-js/async&performance/appendixA' },
+              ],
+            },
           ],
         },
         {
