@@ -1,8 +1,8 @@
-import UnoCSS from 'unocss/vite'
-import footnote_plugin from 'markdown-it-footnote'
-import { defineConfig } from 'vitepress'
-
 import cjk_breaks from 'markdown-it-cjk-breaks'
+import footnote_plugin from 'markdown-it-footnote'
+import UnoCSS from 'unocss/vite'
+
+import { defineConfig } from 'vitepress'
 
 import { nav, sidebarCSS, sidebarEg, sidebarGithub, sidebarJS, sidebarNodejs, sidebarOthers, sidebarVitePress, sidebarVueRouter } from './theme-config'
 

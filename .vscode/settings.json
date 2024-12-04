@@ -1,15 +1,15 @@
 {
   // Disable the default formatter, use eslint instead
-  // "prettier.enable": false,
-  "prettier.enable": true,
+  "prettier.enable": false,
+  // "prettier.enable": true,
   "prettier.printWidth": 160,
   "prettier.proseWrap": "preserve",
 
   // Auto fix
-  // "editor.codeActionsOnSave": {
-  //   "source.fixAll.eslint": "explicit",
-  //   "source.organizeImports": "never"
-  // },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "never"
+  },
 
   // Silent the stylistic rules in you IDE, but still auto fix them
   "eslint.rules.customizations": [
