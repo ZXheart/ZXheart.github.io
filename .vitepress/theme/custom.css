@@ -1,6 +1,6 @@
 :root {
-  --vp-font-family-base: 'PingFang', -apple-system, BlinkMacSystemFont 'Cascadia Code', '等线', 'Inter', '黑体', ui-sans-serif, system-ui, sans-serif,
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --vp-font-family-base: 'system-ui', 'Cascadia Code', '等线', 'Inter', '黑体', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
 
   --vp-font-family-mono: 'Cascadia Code', '等线', ui-monospace, 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
 

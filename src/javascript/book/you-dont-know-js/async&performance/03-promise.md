@@ -260,7 +260,7 @@ evt.on('error', function () {
 })
 ```
 
-`foo(..)`明确的创建并返回了一个事件监听能力 o，调用方代码接受并在它上面注册了两个事件监听器。
+`foo(..)`明确的创建并返回了一个事件监听能力，调用方代码接受并在它上面注册了两个事件监听器。
 
 很明显这反转了一般的面向回调代码，而且是有意为之。与将回调传入`foo(..)`相反，它返回一个我们称之为`evt`的事件能力，它接收回调。
 
@@ -282,3 +282,307 @@ baz(evt)
 它们是否在等待`foo(..)`完成的通知。
 
 实质上，这个`evt`对象是一个中立的第三方协商机制，在分离的关注点之间进行交涉。
+
+#### Promise “事件”
+
+正如你可能已经猜到的，`evt`事件监听能力是一个 Promise 的类比。
+
+在一个基于`Promise`的方式中，前面的代码将会使`foo(..)`创建并返回一个`Promise`实例，而且这个 promise 将会被传入`bar(..)`和`baz(..)`。
+
+> [!NOTE]
+> 我们监听的 Promise 解析“事件”并不是严格的事件（虽然它们为了某些目的表现得像事件），而且它们也不经常称为`"completion"`或`"error"`。相反，我们用`then(..)`来注册一个`then`事件。
+> 或者也许更准确地讲，`then(..)`注册了`fulfillment(完成)`或`rejection(拒绝)`事件，虽然我们在代码中不会看到这些名词被明确的使用。
+
+考虑：
+
+```javascript
+function foo(x) {
+  // 开始写一些可能会花一段时间的事情
+
+  // 构建并返回一个promise
+  return new Promise(function (resolve, reject) {
+    // 最终需要调用`resolve(..)`或`reject(..)`
+    // 它们是这个promise的解析回调
+  })
+}
+
+var p = foo(42)
+
+bar(p)
+
+baz(p)
+```
+
+> [!NOTE]
+> 在`new Promise(function(..){ .. })`中展示的模式通常被称为“揭示构造器[^the-revealing-constructor-pattern]”。被传入的函数立即执行（不会被异步推迟，像`then(..)`的回调那样），
+> 而且它被提供了两个参数，我们叫它们`resolve`和`reject`。这些是 Promise 的解析函数。`resolve(..)`一般表示完成，而`reject(..)`表示拒绝。
+
+你可能猜到了`bar(..)`和`baz(..)`内部看起来是什么样子：
+
+```javascript
+function bar(fooPromise) {
+  // 监听`foo(..)`的完成
+  fooPromise.then(
+    function () {
+      // `foo(..)`现在完成了，那么做`bar(..)`的任务
+    },
+    function () {
+      // 噢，在`foo(..)`中有某些事情搞错了
+    }
+  )
+}
+
+// `baz(..)`同上
+```
+
+Promise 解析没有必要一定发送消息，就像我们将 Promise 作为*将来值*考察时那样。它可以仅仅作为一种流程控制信号，就像前面的代码中那样使用。
+
+另一种表达方式是：
+
+```javascript
+function bar() {
+  // `foo(..)`绝对已经完成了，那么做`bar(..)`的任务
+}
+
+function oopsBar() {
+  // 噢，在`foo(..)`中有些事情搞错了，那么`bar(..)`不会运行
+}
+
+// `baz()`和`oopsBaz()`同上
+
+var p = foo(42)
+
+p.then(bar, oopsBar)
+
+p.then(baz, oopsBaz)
+```
+
+> [!NOTE]
+> 如果你以前见过基于 Promise 的代码，你可能会相信这段代码的最后两行应当写作`p.then(..).then(..)`，使用链式，而不是`p.then(..); p.then(..)`。这将会是两种完全不同的行为，所以要小心！
+> 这种区别现在看起来可能不明显，但是它们实际上是我们目前还没有见过的异步模式：分割(splitting)/分叉(forking)。不必担心！本章后面我们会回到这个话题。
+
+与将 promise 实例`p`传入`bar(..)`和`baz(..)`相反，我们使用 promise 来控制`bar(..)`和`baz(..)`何时该运行（如果执行的话）。主要区别在于错误处理。
+
+在第一个代码段的方式中，无论`foo(..)`是否成功`bar(..)`都会调用，如果被通知`foo(..)`失败了的话它提供自己的后备逻辑。显然，`baz(..)`也是这样做的。
+
+两种方式本身都*对*。但会有一些情况使一种优于另一种。
+
+在这两种方式中，从`foo(..)`返回的 promise`p`都被用于控制下一步发生什么。
+
+另外，两个代码段都以对同一个 promise`p`调用两次`then(..)`结束，这展示了先前的观点，也就是 Promise（一旦被解析）会永远保持相同的解析结果（完成或拒绝），而且可以按需要后续的被监听任意多次。
+
+无论何时`p`被解析，下一步都将总是相同的，包括*现在*和*将来*。
+
+## Thenable 鸭子类型（Duck Typing）
+
+在 Promise 的世界中，一个重要的细节是如何确定一个值是否是纯粹的 Promise。或者更直接地说，一个值会不会像 Promise 一样表现？
+
+我们知道 Promise 是由`new Promise(..)`语法构建的，你可能会想`p instanceof Promise`将是一个可以接受的检查。但不幸的是，有几个理由表明它不是完全够用。
+
+主要原因是，你可以从其他浏览器窗口中收到 Promise 值（iframe 等），其他的浏览器窗口会拥有自己的不同于当前窗口/iframe 的 Promise，这种检查将会在定位 Promise 实例时失效。
+
+另外，一个库或框架可能会选择实现自己的 Promise 而不是用 ES6 原生的`Promise`实现。事实上，你很可能在根本没有 Promise 的老版本浏览器中通过一个库来使用 Promise。
+
+当我们在本章稍后讨论 Promise 的解析过程时，为什么识别并同化一个非纯种但相似 Promise 的值仍然很重要会愈发明显。但目前只需要相信我，它是拼图中很重要的一块。
+
+因此，人们决定识别一个 Promise（或像 Promise 一样表现的某些东西）的方法是定义一种称为“thenable”的东西，也就是任何拥有`then(..)`方法的对象或函数。这种方法假定任何这样的值都是一个符合
+Promise 的 thenable。
+
+根据值的形状（存在什么属性）来推测他的“类型”的“类型检查”有一个一般的名称，称为“鸭子类型检查” —— “如果它看起来像一只鸭子，并且叫起来像一只鸭子，那么它一定是一只鸭子”（参见本丛书的*类型与文法*）。
+所以对 thenable 的鸭子类型检查可能大致是这样：
+
+```javascript
+if (p !== null && (typeof p === 'object' || typeof p === 'function') && typeof p.then === 'function') {
+  // 认为它是一个thenable
+} else {
+  // 不是一个thenable
+}
+```
+
+晕！先把将这种逻辑在各种地方实现有点丑陋的事实放在一边不谈，这里还有更多更深层的麻烦。
+
+如果你试着用一个偶然拥有`then(..)`函数的任意对象/函数来完成一个 Promise，但你又没想把它当作一个 Promise/thenable 来对待，你的运气就用光了，因为它会被自动的识别为一个 thenable 并以特
+殊的规则来对待（见本章后面的部分）。
+
+如果你不知道一个值上面拥有`then(..)`就更是这样。比如：
+
+```javascript
+var o = { then: function () {} }
+
+// 使`v`用`[[Prototype]]`链接到`o`
+var v = Object.create(o)
+
+v.someStuff = 'cool'
+v.otherStuff = 'not so cool'
+
+v.hasOwnProperty('then') // false
+```
+
+`v`看起来根本不像是一个 Promise 或 thenable。它只是一个拥有一些属性的普通对象。你可能只是想把这个值像其他对象那样传递而已。
+
+但你不知道的是，`v`还`[[Prototype]]`链接着（见本丛书的*this 与对象原型*）另一个对象`o`，在它上面偶然拥有一个`then(..)`。所以 thenable 鸭子类型检查将会认为并假定`v`是一个 thenable。噢！
+
+它甚至不需要直接故意这么做：
+
+```javascript
+Object.prototype.then = function () {}
+Array.prototype.then = function () {}
+
+var v1 = { hello: 'world' }
+var v2 = ['Hello', 'World']
+```
+
+`v1`和`v2`都将被假定为是 thenable 的。你不能控制或预测是否有其他代码偶然或恶意的将`then(..)`加到`Object.prototype`，`Array.prototype`，或其他任何原生原型上。而且如果这个指定的
+函数并不将它的任何参数作为回调调用，那么任何用这样的值被解析的 Promise 都将无声的永远挂起！疯狂。
+
+听起来难以置信或不太可能？也许。
+
+要知道，在 ES6 之前就有几种广为人知的非 Promise 库在社区中存在了，而且它们已经偶然拥有了称为`then(..)`的方法。这些库中的一些选择了重命名它们自己的方法来回避冲突（这很烂！）。另一些则因为
+它们无法改变来回避冲突，简单的降级为“不兼容基于 Promise 的代码”的不幸状态。
+
+标准化的决策“劫持”了原本非保留的、完全是通用的`then`属性名，这意味着任何值（或其委托对象），无论是过去，现在，还是将来，只要带有一个`then(..)`函数，不管是有意的还是偶然的，
+都会被 Promise 系统误认为为一个 thenable（可以被处理为 Promise 的对象）。这种误判可能会导致一些非常难以追踪的 Bug。
+
+> [!WARNING]
+> 我并不喜欢我们最终采用了通过 thenable 的鸭子类型来识别 Promise 的方式。还有其他的选项，比如“标记化”`branding`或者“反标记化”`anti-branding`；但我们得到的方案似乎是一个最差的折中方案。
+> 不过，这也不全是坏消息。正如我们稍后会看到的，“thenable”鸭子类型在某些情况下还是很有用的。但需要注意的是，如果它错误地将某些并非 Promise 的东西识别为 Promise，那就会变的非常危险。
+
+## Promise 的信任
+
+前面已经给出了两个很强的类比，用于解释 Promise 在不同方面能为我们的异步代码做些什么。但如果止步于此的话，我们就错过了 Promise 模式构建的可能最重要的特性：信任。
+
+*将来值*和*完成事件*这两个类比在我们之前探讨的代码模式中很明显。但是，我们还不能一眼就看出 Promise 为什么以及如何用于解决 2.3 节列出的所有控制反转信任问题。稍微深入探究一下的话，我们
+就不难发现它提供了一些重要的保护，重新建立了第 2 章中已经毁掉的异步编码可信任性。
+
+先回顾一下只用回调编码的信任问题。把一个回调传入工具`foo(..)`时可能出现如下问题：
+
+- 调用回调过早
+- 调用回调过晚（或不被调用）
+- 调用回调次数过少或过多
+- 未能传递所需的环境和参数
+- 吞掉可能出现的错误和异常
+
+Promise 的特性就是专门用来为这些问题提供一个有效的可复用的答案。
+
+### 调用过早
+
+这个问题主要就是担心代码是否会引入类似 Zalgo 这样的副作用（参见第 2 章）。在这类问题中，一个任务有时同步完成，有时异步完成，这可能会导致“竞态条件[^race-condition]”。
+
+根据定义，Promise 就不必担心这种问题，因为即使是立即完成的 Promise（类似于`new Promise(function(resolve){ resolve(42) })`）也无法被同步观察到。
+
+也就是说，对一个 Promise 调用`then(..)`的时候，即使这个 Promise 已经决议，提供给`then(..)`的回调也总是异步调用（对此的更多讨论，请参见第一章的“Jobs”）。
+
+不再需要插入你自己的`setTimeout(.., 0)`hack，Promise 会自动防止 Zalgo 出现。
+
+### 调用过晚
+
+和前面一点类似，Promise 创建对象调用`resolve(..)`或`reject(..)`时，这个 Promise 的`then(..)`注册的观察回调回被自动调度。可以确信，这些被调度的回调在下一个异步事件
+点上一定会被触发（参见第一章的“Jobs”）。
+
+同步查看是不可能的，所以一个同步任务链无法以这种方式运行来实现按照预期有效延迟另一个回调的发生。也就是说，一个 Promise 决议后，这个 Promise 上所有的通过`then(..)`注册的回调
+都会在下一个异步时机点上依次被立即调用（再次提醒，请参见第一章“Jobs”）。这些回调中的任意一个都无法影响或延误对其他回调的调用。
+
+```javascript
+p.then(function () {
+  p.then(function () {
+    console.log('C')
+  })
+  console.log('A')
+})
+
+p.then(function () {
+  console.log('B')
+})
+
+// A B C
+```
+
+这里，“C”无法打断或抢占“B”，这是因为 Promise 的运作方式。
+
+#### Promise 调度技巧
+
+但是，还有很重要的一点需要指出，有很多调度的细微差别。在这种情况下，两个独立 Promise 上链接的回调的相对顺序无法可靠预测。
+
+如果两个 promise `p1`和`p2`都已经决议，那么`p1.then(..)`和`p2.then(..)`应该最终会先调用`p1`的回调，然后是`p2`的那些。但还有一些微妙的场景可能不是这样的，比如以下代码：
+
+```javascript
+var p3 = new Promise(function (resolve, reject) {
+  resolve('B')
+})
+
+var p1 = new Promise(function (resolve, reject) {
+  resolve(p3)
+})
+
+var p2 = new Promise(function (resolve, reject) {
+  resolve('A')
+})
+
+p1.then(function (v) {
+  console.log(v)
+})
+
+p2.then(function (v) {
+  console.log(v)
+})
+// A B <-- 而不是你可能认为的 B A
+```
+
+后面我们还会深入介绍，但目前你可以看到，`p1`不是立即值而是用另一个 promise`p3`决议，后者本身决议为值“B”。规定的行为是把`p3`展开到`p1`，但是是异步的展开。
+所以，在异步任务队列中，`p1`的回调排在`p2`的回调之后（参见第一章的“Jobs”）。
+
+要避免这样的细微区别带来的噩梦，你永远不应该依赖于不同 Promise 间回调的顺序和调度。实际上，好的编码实践方案根本不会让多个回调的顺序有丝毫影响，可能的话就要避免。
+
+### 回调未调用
+
+这个问题很常见，Promise 可以通过几种途径解决。
+
+首先，没有任何东西（甚至 JavaScript 错误）能阻止 Promise 向你通知它的决议（如果它决议了的话）。如果你对一个 Promise 注册了一个完成回调和一个拒绝回调，
+那么 Promise 在决议时总是会调用其中的一个。
+
+当然，如果你的回调函数本身包含 JavaScript 错误，那可能就会看不到你期望的结果，但实际上回调还是被调用了。后面我们会介绍如何在回调出错时得到通知，
+因为就连这些错误也不会被吞掉。
+
+但是，如果 Promise 本身永远不被决议呢？即使这样，Promise 也提供了解决方案，其使用了一种称为*竞态*的高级抽象机制：
+
+```javascript
+// 用于超时一个Promise的工具
+function timeoutPromise(delay) {
+  return new Promise(function (resolve, reject) {
+    setTimeout(function () {
+      reject('timeout!')
+    }, delay)
+  })
+}
+
+// 设置foo()超时
+Promise.race([foo(), timeoutPromise(3000)]).then(
+  function () {
+    // foo()及时完成！
+  },
+  function (err) {
+    // 或者foo()被拒绝，或者只是没能按时完成
+    // 查看err来了解是那种情况
+  }
+)
+```
+
+关于这个 Promise 超时模式还有更多细节需要考量，后面我们会深入讨论。
+
+很重要的一点是，我们可以保证一个`foo()`又一个输出信号，防止其永久挂住程序。
+
+### 调用次数过少或过多
+
+根据定义，回调被调用的正确次数应该是 1。“过少”的情况就是调用 0 次，和前面解释过的“未被”调用是同一种情况。
+
+“过多”的情况很容易解释。Promise 的定义方式使得它只能被决议一次。如果出于某种原因，Promise 创建代码试图调用`resolve(..)`或`reject(..)`多次，或者试图两者都调用，
+那么这个 Promise 将只会接受第一个决议，并默默地忽略任何后续调用。
+
+由于 Promise 只能被决议一次，所以任何通过`then(..)`注册的（每个）回调就只能被调用一次。
+
+当然，如果你把同一个回调注册了不止一次（比如`p.then(f); p.then(f)`），那它被调用的次数就会和注册次数相同。响应函数只会被调用一次，但这个保证并不能预防你搬起石头砸自己的脚。
+
+### 未能传递参数/环境值
+
+[^the-revealing-constructor-pattern]: [揭示构造器](https://blog.domenic.me/the-revealing-constructor-pattern/)
+[^race-condition]: [竟态条件](https://zh.wikipedia.org/wiki/%E7%AB%B6%E7%88%AD%E5%8D%B1%E5%AE%B3)
