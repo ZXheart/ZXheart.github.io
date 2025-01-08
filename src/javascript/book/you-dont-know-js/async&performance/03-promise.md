@@ -1028,7 +1028,8 @@ p.then(
 
 你可以看到，默认的完成处理函数只是把接收到的任何传入值传递给下一个步骤（Promise）而已。
 
-> [!NOTE] > `then(null, function(err){ .. })`这个模式 —— 只处理拒绝（如果有的话），但又把完成值传递下去 —— 有一个缩写形式的 API：`catch(function(err){ .. })`。
+> [!NOTE]
+> `then(null, function(err){ .. })`这个模式 —— 只处理拒绝（如果有的话），但又把完成值传递下去 —— 有一个缩写形式的 API：`catch(function(err){ .. })`。
 > 下一小节会详细介绍`catch(..)`。
 
 让我们来简单总结一下使链式流程控制可行的 Promise 固有特性。
