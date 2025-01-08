@@ -1045,5 +1045,95 @@ p.then(
 
 ### 属于：决议、完成以及拒绝
 
+对于术语`决议（resolve）`、`完成（fulfill）`和`拒绝（reject）`，在更深入学习 Promise 之前，我们还有一些模糊之处需要澄清。先来研究一下构造器 Promise(..)：
+
+```javascript
+var p = new Promise(function (X, Y) {
+  // X(..)是完成处理函数
+  // Y(..)是拒绝处理函数
+})
+```
+
+你可以看到，这里提供了两个回调（称为 X 和 Y）。第一个通常用于标识 Promise 已经完成，第二个总是标识 Promise 被拒绝。这个“通常”是什么意思呢？对于这些参数的精确命名，又意味着什么呢？
+
+追根究底，这只是你的用户代码和标识符名称，对引擎而言没有意义。所以从技术上说，这无关紧要，`foo(..)`或者`bar(..)`还是同样的函数。但是，你使用的文字不只会影响你对这些代码的看法，也会影响
+团队其他开发者对代码的认识。错误理解精心组织起来的异步代码还不如使用一团乱麻的回调函数。
+
+所以事实上，命名还是有一定的重要性的。
+
+第二个参数名称很容易决定。几乎所有的文献都将其命名为`reject(..)`，因为这就是它真实的（也是唯一的！）工作，所以这样的名字是很好的选择。我强烈建议大家要一直使用`reject(..)`这一名称。
+
+但是，第一个参数就有一些模糊了，Promise 文件通常将其称为`resolve(..)`。这个词显然和决议（resolution）有关，而决议在各种文献（包括本书）中是用来描述“为 Promise 设置最终值/状态”。
+前面我们已经多次使用“Promise 决议”来表示完成或拒绝 Promise。
+
+但是，如果这个参数用来特指完成这个 Promise，那为什么不使用`fulfill(..)`来代替`resolve(..)`以求表达更精确呢？要回答这个问题，我们先来看看两个 Promise API 方法：
+
+```javascript
+var fulfilledPr = Promise.resolve(42)
+
+var rejectedPr = Promise.reject('Oops')
+```
+
+`Promise.resolve(..)`创建了一个决议为输入值的 Promise，在这个例子中，42 是一个非 Promise、非 thenable 的普通值，所以完成后的 promise fulfilledPr 是为值 42 创建的。
+`Promise.reject('Oops')`创建了一个被拒绝的 promise rejectedPr，拒绝理由为“Oops”。
+
+现在我们来解释为什么单词 resolve（比如在`Promise.resolve(..)`中）如果用于表达结果可能是完成也可能是拒绝的话，既没有歧义，而且也确实更精确：
+
+```javascript
+var rejectedTh = {
+  then: function (resolved, rejected) {
+    rejected('Oops')
+  },
+}
+
+var rejectedPr = Promise.resole(rejectedTh)
+```
+
+本章前面已经介绍过，`Promise.resolve(..)`会将传入的真正 Promise 直接返回，对传入的 thenable 则会展开。如果这个 thenable 展开得到一个拒绝状态，那么从`Promise.resolve(..)`返回的
+Promise 实际上就是这同一个拒绝状态。
+
+所以对这个 API 方法来说，`Promise.resolve(..)`是一个精确的好名字，因为它实际上的结果可能是完成或拒绝。
+
+`Promise(..)`构造器的第一个参数回调将会展开 thenable（和`Promise.resolve(..)`一样）或真正的 Promise：
+
+```javascript
+var rejectedPr = new Promise(function (resolve, reject) {
+  // 用一个拒绝的promise完成这个promise
+  resolve(Promise.reject('Oops'))
+})
+
+rejectedPr.then(
+  function fulfilled() {
+    // 永远不会到达这里
+  },
+  function rejected(err) {
+    console.log(err) // Oops
+  }
+)
+```
+
+现在应该很清楚了，`Promise(..)`构造器的第一个回调参数的恰当称谓是`resolve(..)`。
+
+> [!NOTE]
+> 前面提到的`reject(..)`不会像`resolve(..)`一样进行展开。如果向`reject(..)`传入一个 Promise/thenable 值，它会把这个值原封不动地设置为拒绝理由。后续的拒绝处理函数接收到的
+> 是你实际传给`reject(..)`的那个 Promise/thenable，而不是其底层的立即值。
+
+不过，现在我们再来关注一下提供给`then(..)`的回调。它们（在文献和代码中）应该怎么命名呢？我的建议是`fulfilled(..)`和`rejected(..)`：
+
+```javascript
+function fulfilled(msg) {
+  console.log(msg)
+}
+
+function rejected(err) {
+  console.log(err)
+}
+
+p.then(fulfilled, rejected)
+```
+
+对于`then(..)`的第一个参数来说，毫无疑义，总是处理完成的情况，所以不需要使用标识两种状态的术语“resolve”。这里提一下，ES6 规范将这两个回调命名为`onFulfilled(..)`和`onRejected(..)`，
+所以，这两个术语很准确。
+
 [^the-revealing-constructor-pattern]: [揭示构造器](https://blog.domenic.me/the-revealing-constructor-pattern/)
 [^race-condition]: [竟态条件](https://zh.wikipedia.org/wiki/%E7%AB%B6%E7%88%AD%E5%8D%B1%E5%AE%B3)

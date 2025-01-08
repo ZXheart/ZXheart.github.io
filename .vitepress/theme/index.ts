@@ -1,7 +1,7 @@
-import { h } from 'vue'
 import type { Theme } from 'vitepress'
-import DefaultTheme from 'vitepress/theme'
 import { NolebaseEnhancedReadabilitiesMenu, NolebaseEnhancedReadabilitiesScreenMenu } from '@nolebase/vitepress-plugin-enhanced-readabilities/client'
+import DefaultTheme from 'vitepress/theme'
+import { h } from 'vue'
 
 import 'virtual:uno.css'
 import './custom.css'
