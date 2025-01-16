@@ -51,7 +51,10 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
     {
       text: 'Intermediate',
       collapsed: false,
-      items: [{ text: 'medium', link: 'intermediate/intermediate' }],
+      items: [
+        { text: 'medium', link: 'intermediate/intermediate' },
+        { text: 'implement promise', link: 'intermediate/01-promise' },
+      ],
     },
     {
       text: 'Advanced',
