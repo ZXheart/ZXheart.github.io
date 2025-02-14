@@ -7,21 +7,30 @@
   </head>
   <body>
     <script>
-      // IIFE
-      ;(function foo(global) {
-        console.log(global)
-      })(window)
-      // UMD
-      ;(function IIFE(def) {
-        def(window)
-      })(function def(global) {
-        console.log(global)
-      })
+      const arr = [
+        { id: 1, value: 1, parent: null },
+        { id: 2, value: 2, parent: 1 },
+        { id: 3, value: 3, parent: 2 },
+        { id: 4, value: 4, parent: 1 },
+      ]
+      function array2tree(arr) {
+        const map = new Map()
+        arr.forEach(node => {
+          map.set(node.id, { ...node, children: [] })
+        })
 
-      var a = 1
-      if (true) {
-        console.log(a)
+        const root = []
+        arr.forEach(node => {
+          if (node.parent === null) {
+            root.push(map.get(node.id))
+          } else {
+            const parent = map.get(node.parent)
+            parent.children.push(map.get(node.id))
+          }
+        })
+        return root
       }
+      console.log(array2tree(arr))
     </script>
   </body>
 </html>
