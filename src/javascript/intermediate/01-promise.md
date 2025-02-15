@@ -21,6 +21,15 @@ class ZPromise {
 
   constructor(executor) {
     const resolve = data => {
+      // Promise a+ 规范没规定，如果resolve的值是一个thenable，
+      // 那么这个thenable的状态如何处理，其通篇都是在讲then函数。
+
+      // 这里的添加判断，是发现resolve一个thenable对象时，表现与es6的promise不一致。
+      // 碰到thenable的时候，会直接resolve掉，而非展开。
+      // prettier-ignore
+      if (data instanceof ZPromise || (this.#isFnOrObj(data) && typeof data.then === 'function')) { // [!code ++]
+        return data.then(resolve, reject) // [!code ++]
+      } // [!code ++]
       this.#changeStatus(FULFILLED, data)
     }
     const reject = reason => {
@@ -124,7 +133,7 @@ class ZPromise {
   }
 
   #isFnOrObj(x) {
-    return typeof x === 'function' || (typeof x === 'object' && x !== null)
+    return (x && typeof x === 'object') || typeof x === 'function'
   }
 }
 ```

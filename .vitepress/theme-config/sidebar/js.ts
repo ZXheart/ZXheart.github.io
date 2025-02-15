@@ -62,6 +62,8 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
         { text: 'asyncify', link: 'intermediate/02-asyncify.md' },
         { text: 'array2tree', link: 'intermediate/03-array2tree.md' },
         { text: 'webworker', link: 'intermediate/04-try-webworker.md' },
+        { text: 'scroll2top', link: 'intermediate/05-scroll2top.md' },
+        { text: 'highlighter', link: 'intermediate/06-highlighter.md' },
       ],
     },
     {
