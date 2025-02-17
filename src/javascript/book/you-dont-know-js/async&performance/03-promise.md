@@ -1363,5 +1363,165 @@ foo(42).then(
 
 在经典的编程术语中，门（gate）是这样一种机制要等待两个或更多并行/并发的任务都完成才能继续。它们的完成顺序不重要，但是必须都要完成，门才能打开并让流程控制继续。
 
+在 Promise API 中，这种模式被称为`all([ .. ])`。
+
+假定你想要同时发送两个 Ajax 请求。等它们不管以什么顺序全部完成之后，再发送第三个 Ajax 请求。考虑：
+
+```javascript
+// request(..)是一个Promise-aware Ajax工具
+// 就像我们在本章前面定义的一样
+var p1 = request('http://some.url.1/')
+var p2 = request('http://some.url.2/')
+
+Promise.all([p1, p2])
+  .then(function (msgs) {
+    //  这里p1和p2完成并把它们的消息传入
+    return request('http://some.url.3/?v=' + msgs.join(','))
+  })
+  .then(function (msg) {
+    console.log(msg)
+  })
+```
+
+`Promise.all([ .. ])`需要一个参数，是一个数组，通常由 Promise 实例组成。从`Promise.all([ .. ])`调用返回的 promise 会收到一个完成消息（代码片段中的 msgs）。
+这是一个由所有传入 promise 的完成消息组成的数组，与指定的顺序一致（与完成顺序无关）。
+
+> [!NOTE]
+> 严格来说，传给`Promise.all([ .. ])`的数组中的值可以是 Promise、thenable，甚至是立即值。就本质而言，列表中的每个值都会通过`Promise.resolve(..)`过滤，
+> 以确保要等待的是一个真正的 Promise，所以立即值会被规范化为这个值构建的 Promise。如果数组是空的，主 Promise 会立即完成。
+
+从`Promise.all([ ..])`返回的主 promise 在且仅在所有的成员 promise 都完成后才会完成。如果这些 promise 中有任何一个被拒绝的话，主`Promise.all([ .. ])` promise 就会立即
+被拒绝，并丢弃来自其他所有 promise 的全部结果。
+
+永远要记住为每个 promise 关联一个拒绝/错误处理函数，特别是从`Promise.all([ .. ])`返回的那一个。
+
+### Promise.race([ .. ])
+
+尽管`Promise.all([ ..])`协调多个并发 promise 的运行，并假定所有 Promise 都需要完成，但有时候你会想只响应“第一个夸过终点线的 Promise”，而抛弃其他 Promise。
+
+这种模式传统上称为门闩，但在 Promise 中称为竞态。
+
+> [!WARNING]
+> 虽然“只有第一个到达终点的才算胜利”这个比喻很好地描述了其行为特性，但遗憾的是，由于竟态条件通常被认为是程序中的 bug（参见第 1 章），
+> 所以从某种程度上说，“竞争”这个词已经是一个具有固定意义的术语了。不要混淆了`Promise.race([ .. ])`和竟态条件。
+
+`Promise.race([ .. ])`也接受单个数组参数。这个数组由一个或多个 Promise、thenable 或者立即值组成。立即值之间的竞争在实践中没有太大意义，因为显然列表中的第一个会获胜，
+就像赛跑中有一个选手是从重点开始比赛一样！
+
+与`Promise.all([ .. ])`类似，一旦有任何一个 Promise 决为完成，`Promise.race([ .. ])`就会完成；一旦有任何一个 Promise 决议为拒绝，它就会拒绝。
+
+> [!WARNING]
+> 一项竞赛需要至少一个“参赛者”。所以，如果你传入了一个空数组，主`race([ .. ])`Promise 永远不会决议，而不是立即决议。这很容易搬起石头砸自己的脚！ES6
+> 应该指定它完成或拒绝，抑或只是抛出某种同步错误。遗憾的是，因为 Promise 库在时间上早于 ES6，他们不得已遗留了这个问题，所以，要注意，永远不要传递空数组。
+
+再回顾一下前面的并发 Ajax 例子，不过这次的 p1 和 p2 是竞争关系：
+
+```javascript
+// request(..)是一个支持Promise的Ajax工具
+// 就像我们在本章前面定义的一样
+
+var p1 = request('http://some.url.1/')
+var p2 = request('http://some.url.2/')
+
+Promise.race([p1, p2])
+  .then(function (msg) {
+    // p1或p2将赢得这场竞赛
+    return request('http://some.url.3/?v=' + msg)
+  })
+  .then(function (msg) {
+    console.log(msg)
+  })
+```
+
+因为只有一个 promise 能够取胜，所以完成只是单个消息，而不是像对`Promise.all([ ..])`那样的是一个数组。
+
+#### 超时竞赛
+
+我们之前看到过这个例子，其展示了如何使用`Promise.race([ .. ])`表达 Promise 超时模式：
+
+```javascript
+// foo()是一个支持Promise的函数
+// 前面定义的timeoutPromise(..)返回一个promise，
+// 这个promise会在指定延时之后拒绝
+
+// 为foo()设定超时
+Promise.race([
+  foo(), // 启动foo()
+  timeoutPromise(3000), // 给它3秒钟
+]).then(
+  function () {
+    // foo()按时完成！
+  },
+  function (err) {
+    // 要么foo()被拒绝，要么只是没能够按时完成，
+    // 因此要查看err了解具体原因
+  }
+)
+```
+
+在多数情况下，这个超时模式能够很好的工作。但是，还有一些微妙的情况需要考虑，并且坦白地说，对于`Promise.race([ .. ])`和`Promise.all([ .. ])` 也都是如此。
+
+#### finally
+
+一个关键问题是：“那些被丢弃或忽略的 promise 会发生什么呢？”我们并不是从性能的角度提出这个问题的 —— 通常最终它们会被垃圾回收 —— 而是从行为的角度（副作用等）。
+Promise 不能被取消，也不应该被取消，因为那会摧毁本章稍后的“无法取消的 Promise”已接种讨论的外部不可变性原则，所以它们只能被默默忽略。
+
+那么如果前面例子中的`foo()`保留了一些要用的资源，但是出现了超时，导致这个 promise 被忽略，这又会怎样呢？在这种模式中，会有什么为超时后主动释放这些保留资源提供任何支持，
+或者取消任何可能产生的副作用吗？如果你想要的只是记录下`foo()`超时这个事实，又会如何呢？
+
+有些开发者提出，Promise 需要一个`finally(..)`回调注册，这个回调在 Promise 决议后总是会被调用，并且允许你执行任何必要的清理工作。目前，规范还没有支持这一点，
+不过在 ES7+中也许可以。只好等等看了。
+
+它看起来可能类似于：
+
+```javascript
+var p = Promise.resolve(42)
+
+p.then(something).finally(cleanup).then(another).finally(cleanup)
+```
+
+> [!NOTE]
+> 在各种各样的 Promise 库中，`finally(..)`还是会创建并返回一个新的 Promise（以支持链接继续）。如果`cleanup()`函数要返回一个 Promise 的话，这个 promise
+> 就会被链接到链中，这意味着这里还是会有前面讨论过的未处理拒绝问题。
+
+同时，我们可以构建一个静态辅助工具来查看（而不影响）Promise 的决议：
+
+```javascript
+// polyfill安全的guard检查
+if (!Promise.observe) {
+  Promise.observe = function (pr, cb) {
+    // 观察pr的决议
+    pr.then(
+      function fulfilled(msg) {
+        // 安排异步回调（作为Job）
+        Promise.resolve(msg).then(cb)
+      },
+      function rejected(err) {
+        // 安排异步回调（作为Job）
+        Promise.resolve(err).then(cb)
+      }
+    )
+    // 返回最初的promise
+    return pr
+  }
+}
+```
+
+下面是如何在前面的超时例子中使用这个工具：
+
+```javascript
+Promise.race([
+  Promise.observe(foo(), function cleanup(msg) {
+    // 在`foo()`之后清理，即使它没有在超时之前完成
+  }),
+  timeoutPromise(3000), // 给它3秒钟
+])
+```
+
+这个辅助工具`Promise.observe(..)`只是用来展示可以如何查看 Promise 的完成而不对其产生影响。其他的 Promise 库有自己的解决方案。不管如何实现，
+你都很可能遇到需要确保 Promise 不会被意外默默忽略的情况。
+
+### `all([ .. ])`和`race([ .. ])`的变体
+
 [^the-revealing-constructor-pattern]: [显示构造器](https://blog.domenic.me/the-revealing-constructor-pattern/)
 [^race-condition]: [竟态条件](https://zh.wikipedia.org/wiki/%E7%AB%B6%E7%88%AD%E5%8D%B1%E5%AE%B3)
