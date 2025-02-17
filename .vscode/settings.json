@@ -23,6 +23,7 @@
     { "rule": "*-newline", "severity": "off" },
     { "rule": "*quotes", "severity": "off" },
     { "rule": "*semi", "severity": "off" }
+    // { "rule": "unicorn/number-literal-case", "severity": "off" }
   ],
 
   // Enable eslint for all supported languages

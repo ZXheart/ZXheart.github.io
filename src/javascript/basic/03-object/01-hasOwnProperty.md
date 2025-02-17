@@ -7,7 +7,7 @@
 > [!NOTE]
 > 在支持`Object.hasOwn`的浏览器中，建议使用`Object.hasOwn()`代替`Object#hasOwnProperty()`。原因如下:
 
-### 使用 hasOwnProperty 作为属性名
+#### 1. 使用 hasOwnProperty 作为属性名
 
 ```javascript
 const foo = {
@@ -38,7 +38,7 @@ Object#hasOwnProperty.call(foo, 'bar') // true
 ;({}).hasOwnProperty.call(foo, 'bar') // true
 ```
 
-### 由 Object.create(null)创建的对象
+#### 2. 由 Object.create(null)创建的对象
 
 使用`Object.create(null)`创建的对象不从`Object.prototype`继承，使得`hasOwnPrototype()`不可访问。
 

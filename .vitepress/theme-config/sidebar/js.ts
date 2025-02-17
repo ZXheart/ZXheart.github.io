@@ -64,6 +64,8 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
         { text: 'webworker', link: 'intermediate/04-try-webworker.md' },
         { text: 'scroll2top', link: 'intermediate/05-scroll2top.md' },
         { text: 'highlighter', link: 'intermediate/06-highlighter.md' },
+        { text: 'staticEl-vs-liveEl', link: 'intermediate/07-staticEl-vs-liveEl.md' },
+        { text: 'concurrency-parallelism', link: 'intermediate/08-concurrency-parallelism.md' },
       ],
     },
     {
