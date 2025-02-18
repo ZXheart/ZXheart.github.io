@@ -1792,5 +1792,112 @@ p.catch(handleErrors)
 
 #### 分裂值
 
+有时候你可以把这一点当作提示你可以/应该把问题分解为两个或更多 Promise 的信号。
+
+设想你有一个工具`foo(..)`，它可以异步产生两个值（x 和 y）：
+
+```javascript
+function getY(x) {
+  return new Promise(function (resolve, reject) {
+    setTimeout(function () {
+      resolve(3 * x - 1)
+    }, 100)
+  })
+}
+
+function foo(bar, baz) {
+  var x = bar * baz
+
+  return getY(x).then(function (y) {
+    // 把两个值封装到容器中
+    return [x, y]
+  })
+}
+
+fo(10, 20).then(function (msgs) {
+  var x = msgs[0]
+  var y = msgs[1]
+
+  console.log(x, y) // 200 599
+})
+```
+
+首先，我们重新组织一下`foo(..)`返回的内容，这样就不再需要把 x 和 y 封装到一个数组值中以通过 promise 传输。取而代之的是，我们可以把每个值封装到它自己的 promise：
+
+```javascript
+function foo(bar, baz) {
+  var x = bar * baz
+  // 返回两个promise
+
+  return [Promise.resolve(x), getY(x)]
+}
+
+Promise.all(foo(10, 20)).then(function (msgs) {
+  var x = msgs[0]
+  var y = msgs[1]
+
+  console.log(x, y) // 200 599
+})
+```
+
+一个 promise 数组真的要优于传递给单个 promise 的一个值数组吗？从语法的角度来说，这算不上是一个改进。
+
+但是，这种方法更符合 Promise 的设计理念。如果以后需要重构代码把对 x 和 y 的计算分开，这种方法就简单得多。由调用代码来决定如何安排这两个 promise，而不是把这种细节
+放在`foo(..)`内部抽象，这样更整洁也更灵活。这里使用了`Promise.all([ .. ])`，当然，这并不是唯一的选择。
+
+#### 展开/传递参数
+
+`var x = ..`和`var y = ..`赋值操作仍然是麻烦的开销。我们可以在辅助工具中采用某种函数技巧（感谢 Reginald Braithwaite， 推特：@raganwald）：
+
+```javascript
+function spread(fn) {
+  return Function.apply.bind(fn, null)
+}
+
+// 看上边的函数卡壳了，这个注释代码是导图
+// const obj = {
+//   a: 1,
+//   foo(x) {
+//     return this.a * x
+//   },
+// }
+// obj.foo.call({ a: 2 }, 3)
+
+Promise.all(foo(10, 20)).then(
+  spread(function (x, y) {
+    console.log(x, y) // 200 599
+  })
+)
+```
+
+这样会好一点！当然，你可以把这个函数戏法在线化，以避免额外的辅助工具：
+
+```javascript
+Promise.all(foo(10, 20)).then(
+  Function.apply.bind(function (x, y) {
+    console.log(x, y) // 200 599
+  }, null)
+)
+```
+
+这些技巧可能很灵巧，但 ES6 给出了一个更好的答案：解构。数组解构赋值形式看起来是这样的：
+
+```javascript
+Promise.all(foo(10.2)).then(function (msgs) {
+  var [x, y] = msgs
+  console.log(x, y) // 200 599
+})
+```
+
+不过最好的是，ES6 提供了数组参数结构形式：
+
+```javascript
+Promise.all(foo(10, 20)).then(function ([x, y]) {
+  console.log(x, y) // 200 599
+})
+```
+
+现在，我们符合了“每个 Promise 一个值”的理念，并且又将重复样板代码量保持在了最小！
+
 [^the-revealing-constructor-pattern]: [显示构造器](https://blog.domenic.me/the-revealing-constructor-pattern/)
 [^race-condition]: [竟态条件](https://zh.wikipedia.org/wiki/%E7%AB%B6%E7%88%AD%E5%8D%B1%E5%AE%B3)
