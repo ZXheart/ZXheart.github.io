@@ -1464,7 +1464,7 @@ Promise.race([
 #### finally
 
 一个关键问题是：“那些被丢弃或忽略的 promise 会发生什么呢？”我们并不是从性能的角度提出这个问题的 —— 通常最终它们会被垃圾回收 —— 而是从行为的角度（副作用等）。
-Promise 不能被取消，也不应该被取消，因为那会摧毁本章稍后的“无法取消的 Promise”已接种讨论的外部不可变性原则，所以它们只能被默默忽略。
+Promise 不能被取消，也不应该被取消，因为那会摧毁本章稍后的“无法取消的 Promise”一节中讨论的外部不可变性原则，所以它们只能被默默忽略。
 
 那么如果前面例子中的`foo()`保留了一些要用的资源，但是出现了超时，导致这个 promise 被忽略，这又会怎样呢？在这种模式中，会有什么为超时后主动释放这些保留资源提供任何支持，
 或者取消任何可能产生的副作用吗？如果你想要的只是记录下`foo()`超时这个事实，又会如何呢？
@@ -1522,6 +1522,275 @@ Promise.race([
 你都很可能遇到需要确保 Promise 不会被意外默默忽略的情况。
 
 ### `all([ .. ])`和`race([ .. ])`的变体
+
+虽然原生 ES6 Promise 中提供了内建的`Promise.all([ .. ])`和`Promise.race([ .. ])`，但这些语义还有其他几个常见的变体模式。
+
+- `none([ .. ])` - （没进入标准，当所有 promise 拒绝时，进入 onFulfilled(errors)；只要有一个成功，就立即失败进入 onRejected(success)）
+
+  这个模式类似于`all([ .. ])`，不过完成和拒绝的情况互换了。所有的 Promise 都要被拒绝，即拒绝转化为完成值，反之亦然。
+
+- `any( [ .. ])` - （进入标准库，返回第一个完成的 promise，全都拒绝返回`AggregateError`）
+
+  这个模式与`all([ .. ])`类似，但是会忽略拒绝，所以只需要完成一个而不是全部。
+
+- `first([ .. ])` - （没进入标准，返回第一个完成的 promise，忽略后续的任何拒绝和完成）
+
+  这个模式类似于`any([ .. ])`的竞争，即只要第一个 Promise 完成，它就会忽略后续的任何拒绝和完成。
+
+- `last([ .. ])` - （没进入标准，返回最后一个完成的 promise）
+
+  这个模式类似于`first([ .. ])`。但却是只有最后一个完成胜出。
+
+这些 Promise 抽象库提供了这些支持，但也可使用 Promise、`race([ .. ])`和`all([ .. ])`这些机制，你自己来实现它们。
+
+比如，可以像这样定义`first([ .. ])`：
+
+```javascript
+// polyfill安全的guard检查
+if (!Promise.first) {
+  Promise.first = function (prs) {
+    return new Promise(function (resolve, reject) {
+      // let rejectCounter = 0
+      prs.forEach(pr => {
+        // 把值规整化
+        Promise.resolve(pr)
+          // 不管哪个最先完成，就决议主promise
+          .then(
+            resolve
+            // ,function () {
+            //   ++rejectCounter
+            //   if (rejectCounter === prs.length) {
+            //     reject(new Error('All promises were rejected'))
+            //   }
+            // }
+          )
+      })
+    })
+  }
+}
+```
+
+> [!NOTE]
+> 在这个`first(..)`视线中，如它的所有 promise 都拒绝的话，它不会拒绝。它只会挂住，非常类似于`Promise.race([])`。如果需要的话，可以添加额外的逻辑
+> 跟踪每个 promise 拒绝。如果所有的 promise 都被拒绝，就在主 promise 上调用 reject()。这个实现留给你当练习。
+
+### 并发迭代
+
+有些时候会需要在一列 Promise 中迭代，并对所有 Promise 都执行某个任务，非常类似于对同步数组可以做的那样（比如`forEach(..)`、`map(..)`、`some(..)`和`every(..)`）。如果要对每个 Promise 执行的任务本身是同步的，那这些工具就可以工作，就像前面代码中的`forEach(..)`。
+
+但如果这些任务从根本上是异步的，或者可以/应该并发执行，那你可以使用这些工具的异步版本，许多库中提供了这样的工具。
+
+举例来说，让我们考虑一下一个异步的`map(..)`工具。它接收一个数组的值（可以是 Promise 或其他任何值），外加要在每个值上运行一个函数（任务）作为参数。`map(..)`
+本身返回一个 promise，其完成值是一个数组，该数组（保持映射顺序）保存任务执行之后的异步完成值：
+
+```javascript
+if (!Promise.map) {
+  Promise.map = function (vals, cb) {
+    // 一个等待所有map的promise的新promise
+    return Promise.all(
+      // 注：一般数组的map(..)`把值数组转换为promise数组
+      vals.map(val => {
+        // 用val异步map之后决议的新promise替换val
+        return new Promise(resolve => {
+          cb(val, resolve)
+        })
+      })
+    )
+  }
+}
+```
+
+> [!NOTE]
+> 在这个`map(..)`实现中，不能发送异步拒绝信号，当如果在映射的回调`cb(..)`内出现同步的异常或错误，主`Promise.map(..)`返回的 promise 就会拒绝。
+
+下面展示如何在一组 Promise（而非简单的值）上使用`map(..)`：
+
+```javascript
+var p1 = Promise.resolve(21)
+var p2 = Promise.resolve(42)
+var p3 = Promise.reject('Oops')
+
+// 把列表中的值加倍，即使是在Promise中
+Promise.map([p1, p2, p3], function (pr, done) {
+  // 保证这一条本身是一个Promise
+  Promise.resolve(pr).then(
+    // 提取值作为v
+    function (v) {
+      // map 完成的v到新值
+      done(v * 2)
+    },
+    // 或者map到promise拒绝消息
+    done
+  )
+}).then(function (vals) {
+  console.log(vals) // [42, 84, 'Oops']
+})
+```
+
+## Promise API 概述
+
+本章已经在多处零零碎碎地展示了 ES6 Promise API，现在让我们来总结一下。
+
+> [!NOTE]
+> 下面的 API 只对于 ES6 是原生的，但是有符合规范的适配版（不只是对 Promise 库的扩展），其定义了 Promise 及它的所有相关特性，这样你在前 ES6 浏览器
+> 也可以使用原生 Promise。这样的适配版之一是[Native Promise Only](http://github.com/getify/native-promise-only)，是我写的。
+
+### new Promise(..)构造器
+
+有启示性的构造器 Promise(..)必须和 new 一起使用，并且必须提供一个函数回调。这个回调是同步的或立即调用的。这个函数接受两个函数回调，用以支持 promise 的决议。
+通常我们把这两个函数称为`resolve(..)`和`reject(..)`：
+
+```javascript
+var p = new Promise(function (resolve, reject) {
+  // resolve(..)用以决议/完成这个promise
+  // reject(..)表示拒绝这个promise
+})
+```
+
+`reject(..)`就是拒绝这个 promise；但`resolve(..)`既可能完成 promise，也可能拒绝，要根据传入参数而定。如果传给`resolve(..)`的是一个非 Promise、非 thenable
+的立即值，这个 promise 就会用这个值完成。
+
+但是，如果传给`resolve(..)`的是一个真正的 Promise 或 thenable 值，这个值就会被递归展开，并且（要构造的）promise 将取用其最终决议值或状态。
+
+### Promise.resolve(..)和 Promise.reject(..)
+
+创建一个一被拒绝的 Promise 的快捷方式是使用`Promise.reject(..)`，所以以下两个 promise 是等价的：
+
+```javascript
+var p1 = new Promise(function (resolve, reject) {
+  reject('Oops')
+})
+
+var p2 = Promise.reject('Oops')
+```
+
+`Promise.resolve(..)`常用于创建一个已完成的 Promise，使用方式与`Promise.reject(..)`类似。但是，`Promise.resolve(..)`也会展开 thenable 值（前面已多次介绍）。
+在这种情况下，返回的 Promise 采用传入的这个 thenable 的最终决议值，可能是完成，也可能是拒绝：
+
+```javascript
+var fulfilledTh = {
+  then: function (cb) {
+    cb(42)
+  },
+}
+
+var rejectedTh = {
+  then: function (cb, errCb) {
+    errCb('Oops')
+  },
+}
+
+var p1 = Promise.resolve(fulfilledTh)
+var p2 = Promise.resolve(rejectedTh)
+```
+
+还要记住，如果传入的是真正的 Promise，`Promise.resolve(..)`什么都不会做，只会直接把这个值返回。所以，对你不了解属性的值调用`Promise.resolve(..)`，如果
+它恰好是一个真正的 Promise，是不会有额外的开销的。
+
+### then(..)和 catch(..)
+
+每个 Promise 实例（不是 Promise API 命名空间）都有`then(..)`和`catch(..)`方法，通过这两个方法可以为这个 Promise 注册完成和拒绝处理函数。Promise 决议之后，
+立即会调用这两个处理函数之一，但不会两个都调用，而且总是异步调用（参见第一章的“Jobs”）。
+
+`then(..)`接受一个或两个参数：第一个用于完成回调，第二个用于拒绝回调。如果两者中的任何一个被省略或者作为非函数值传入的话，就会替换为相应的默认回调。默认完成回调
+只是把消息传递下去，而默认拒绝回调则只是重新抛出（传播）其接受到的出错原因。
+
+就像刚刚讨论过的一样，`catch(..)`只接受一个拒绝回调作为参数，并自动替换默认完成回调。换句话说，它等价于`then(null, ..)`：
+
+```javascript
+p.then(fulfilled)
+
+p.then(fulfilled, rejected)
+
+p.catch(rejected) // 或者 p.then(null, rejected)
+```
+
+`then(..)`和`catch(..)`也会创建并返回一个新的 promise，这个 promise 可以用于实现 Promise 链式流程控制。如果完成或拒绝回调中抛出异常，返回的 promise 是被拒绝的。
+如果任意一个回调返回非 Promise、非 thenable 的立即值，这个值会被用做返回 promise 的完成值。如果完成处理函数返回一个 promise 或 thenable，那么这个值会被展开，并作为
+返回 promise 的决议值。
+
+### Promise.all([ .. ])和 Promise.race([ .. ])
+
+ES6 Promise API 静态辅助函数`Promise.all([ .. ])`和`Promise.race([ .. ])`都会创建一个 Promise 作为它们的返回值。这个 promise 的决议完全由
+传入的 promise 数组控制。
+
+对`Promise.all([ .. ])`来说，只有传入的所有 promise 都完成，返回 promise 才能完成。如果有任何 promise 被拒绝，返回的主 promise 就立即会被拒绝（抛弃
+任何其他 promise 的结果）。如果完成的话，你会得到一个数组，其中包含传入的所有 promise 的完成值。对于拒绝的情况，你只会得到第一个拒绝 promise 的拒绝理由值。
+这种模式传统上被称为门（gate）：所有人都到齐了才开门。
+
+对`Promise.race([ .. ])`来说，只有第一个决议的 promise（完成或拒绝）取胜，并且其解决结果成为返回 promise 的决议。
+这种模式传统上称为门闩：第一个到达者打开门闩通过。考虑：
+
+```javascript
+var p1 = Promise.resolve(42)
+var p2 = Promise.resolve('Hello World')
+var p3 = Promise.reject('Oops')
+
+Promise.race([p1, p2, p3]).then(function (msg) {
+  console.log(msg) // 42
+})
+
+Promise.all([p1, p2, p3]).catch(function (err) {
+  console.error(err) // 'Oops'
+})
+
+Promise.all([p1, p2]).then(function (msgs) {
+  console.log(msgs) // [42, 'Hello World']
+})
+```
+
+> [!WARNING]
+> 当心！若向`Promise.all([ .. ])`传入空数组，它会立即完成，但`Promise.race([ .. ])`会挂起，且永远不会决议。
+
+ES6 Promise API 非常简单直观。它至少足以处理最基本的异步情况，并且如果要重新整理，把代码从地狱回调解救出来的话，它也是一个很好的起点。
+
+但是，应用常常会有很多更复杂的异步情况需要实现，而 Promise 本身对此在处理上具有局限性。下一节会深入探讨这些局限，理解 Promise 库出现的动机。
+
+## Promise 局限性
+
+这一届讨论的许多细节本章之前都已经有所提及，不过我们还是一定要专门总结这些局限性才行。
+
+### 顺序错误处理
+
+本章前面已经详细介绍了适合 Promise 的错误处理。Promise 的设计局限性（具体来说，就是它们的链接的方式）造成了一个让人很容易中招的陷阱，
+即 Promise 链中的错误很容易被无意中默默忽略掉。
+
+关于 Promise 错误，还有其他需要考虑的地方。由于一个 Promise 链仅仅是连接到一起的成员 promise，没有把整个链标识为一个个体的实体，这意味着
+没有外部方法可以用于观察可能发生的错误。
+
+如果构建了一个没有错误处理函数的 Promise 链，链中任何地方的任何错误都会在链中一直传播下去，直到被查看（通过在某个步骤注册拒绝处理函数）。在这个特定的例子中，
+只要有一个指向链中最后一个 promise 的引用就足够了（下面代码中的 p），因为你可以在那里注册拒绝处理函数，而且这个处理函数能够得到所有传播过来的错误的通知：
+
+```javascript
+// foo(..)，STEP2(..)以及STEP3(..)都是支持Promise的
+
+var p = foo(42).then(STEP2).then(STEP3)
+```
+
+虽然这里可能有点鬼祟、令人迷惑，但是这里的 p 并不指向链中的第一个 promise（调用`foo(42)`产生的那一个），而是指向最后一个 promise，即
+来自调用`then(STEP3)`的那一个。
+
+还有，这个 Promise 链中的任何一个步骤都没有显式的处理自身错误。这意味着你可以在 p 上注册一个拒绝错误处理函数，对于链中任何位置出现的任何错误，
+这个处理函数都会得到通知：
+
+```javascript
+p.catch(handleErrors)
+```
+
+但是，如果链中的任何一个步骤事实上进行了自身的错误处理（可能以隐藏或抽象的不可见的方式），那你的`handleErrors(..)`就不会得到通知。这可能是你想要的 —— 毕竟这是
+一个“已处理的拒绝” —— 但也可能并不是。完全不能得到（对任何“已经处理”的拒绝错误的）错误通知也是一个缺陷，它限制了某些用例的功能。
+
+基本上，这等同于`try..catch`存在的局限：`try..catch`可能捕获一个异常并简单的吞掉它。所以这并不是 Promise 独有的局限性，但可能是我们希望绕过的陷阱。
+
+遗憾的是，很多时候并没有为 Promise 链序列的中间步骤保留的引用。因此，没有这样的引用，你就无法关联错误处理函数来可靠的检查错误。
+
+### 单一值
+
+根据定义，Promise 只能有一个完成值或一个拒绝理由。在简单的例子中，这不是什么问题，但是在更复杂的场景中，你可能就会发现这是一种局限了。
+
+一般的建议是构造一个值封装（比如一个对象或数组）来保持这样的多个信息。这个解决方案可以起作用，但要在 Promise 链中的每一步都进行封装和解封，就十分丑陋和笨重了。
+
+#### 分裂值
 
 [^the-revealing-constructor-pattern]: [显示构造器](https://blog.domenic.me/the-revealing-constructor-pattern/)
 [^race-condition]: [竟态条件](https://zh.wikipedia.org/wiki/%E7%AB%B6%E7%88%AD%E5%8D%B1%E5%AE%B3)

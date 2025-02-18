@@ -51,6 +51,15 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
           collapsed: true,
           items: [{ text: 'hasOwnProperty', link: 'basic/03-object/01-hasOwnProperty' }],
         },
+        {
+          text: 'Promise',
+          collapsed: true,
+          items: [
+            { text: 'all', link: 'basic/04-promise/01-all' },
+            { text: 'race', link: 'basic/04-promise/02-race' },
+            { text: 'any', link: 'basic/04-promise/03-any' },
+          ],
+        },
       ],
     },
     {
@@ -66,6 +75,7 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
         { text: 'highlighter', link: 'intermediate/06-highlighter.md' },
         { text: 'staticEl-vs-liveEl', link: 'intermediate/07-staticEl-vs-liveEl.md' },
         { text: 'concurrency-parallelism', link: 'intermediate/08-concurrency-parallelism.md' },
+        { text: 'event-loop-model', link: 'intermediate/09-event-loop-model.md' },
       ],
     },
     {
