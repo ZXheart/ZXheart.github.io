@@ -1899,5 +1899,96 @@ Promise.all(foo(10, 20)).then(function ([x, y]) {
 
 现在，我们符合了“每个 Promise 一个值”的理念，并且又将重复样板代码量保持在了最小！
 
+> [!NOTE]
+> 关于 ES6 解构形式的更多信息，请参考本系列的*ES6 与未来*。
+
+### 单决议
+
+Promise 最本质的一个特征是：Promise 只能被决议一次（完成或拒绝）。在许多异步情况中，你只会获取一个值一次，所以这可以工作良好。
+
+但是，还有很多异步的情况适合另一种模式 —— 一种类似于事件或数据流的模式。在表面上，目前还不清楚 Promise 能不能很好用于这样的用例，如果不是完全不可用的话。
+如果不在 Promise 之上构建显著的抽象，Promise 肯定完全无法支持多值决议处理。
+
+设想这样一个场景：你可能要启动一系列异步步骤以响应某种可能多次发生的激励（就像事件），比如按钮点击。
+
+这样可能不会按照你的期望工作：
+
+```javascript
+// click(..)把 click 事件绑定到一个DOM元素
+// request(..)是一个支持Promise的Ajax工具
+
+var p = new Promise(function (resolve, reject) {
+  click('#myBtn', resolve)
+})
+
+p.then(function (evt) {
+  var btnId = evt.currentTarget.id
+  return request('http://some.url.1/?id=' + btnId)
+}).then(function (text) {
+  console.log(text)
+})
+```
+
+只有在你的应用只需要响应按钮点击一次的情况下，这种方式才能工作。如果这个按钮被点击了第二次的话，promise p 已经决议，因此第二个`resolve(..)`调用就会被忽略。
+
+因此，你可能需要转化这个范例，为每个事件的发生创建一整个新的 Promise 链：
+
+```javascript
+click('#myBtn', function (evt) {
+  var btnId = evt.currentTarget.id
+
+  request('http://some.url.1/?id=' + btnId).then(function (text) {
+    console.log(text)
+  })
+})
+```
+
+这种方法可以工作，因为针对这个按钮上的每个“click”事件都会启动一整个新的 Promise 序列。
+
+由于需要在事件处理函数中定义整个 Promise 链，这很丑陋。除此之外，这个设计在某种程度上破坏了*关注点与功能分离*（SoC）的思想。你很可能想要把事件处理函数的定义
+和对事件的响应（那个 Promise 链）的定义放在代码中的不同位置。如果没有辅助机制的话，在这种模式下很难这样实现。
+
+> [!NOTE]
+> 另外一种清晰展示这种局限性的方法是：如果能够构建某种“可观测量”（observable），可以将一个 Promise 链对应到这个“可观测量”就好了。有一些库已经创建了这样的抽象（
+> 比如[RxJS](https://rxjs.dev/guide/observable)），但是这种抽象看起来非常笨重，以至于你甚至已经看不到任何 Promise 本身的特性。这样厚重的抽象带来了一些需
+> 要考虑的重要问题，比如这些机制（无 Promise）是否像 Promise 本身设计的那样可以信任。附录 B 会再次讨论这种“可观测量”模式。
+
+### 惯性
+
+要在你自己的代码中开始使用 Promise 的话，一个具体的障碍是，现存的所有代码都还不理解 Promise。如果你已经有大量基于回调的代码，那么保持编码风格不变要简单得多。
+
+“运动状态（使用回调的）的代码库会一直保持运动状态（使用回调），直到受到一位聪明的、理解 Promise 的开发者的作用。”
+
+Promise 提供了一种不同的范式，因此，编码方式的改变程度从某处的个别差异到某种情况下的截然不同都有可能。你需要刻意的改变，因为 Promise 不会从目前的编码方式
+中自然而然地衍生出来。
+
+考虑如下的类似基于回调的场景：
+
+```javascript
+function foo(x, y, cb) {
+  ajax('http://some.url.1/?x=' + x + '&y=' + y, cb)
+}
+
+foo(11, 31, function (err, text) {
+  if (err) {
+    console.error(err)
+  } else {
+    console.log(text)
+  }
+})
+```
+
+能够很快明显看出要把这段基于回调的代码转化为基于 Promise 的代码应该从哪些步骤开始吗？这要视你的经验而定。时间越多，越会觉得得心应手。但可以确定的是，Promise
+并没有明确表示要如何实现转化。没有放之四海皆准的答案，责任还是在你的身上。
+
+如前所述，我们绝对需要一个支持 Promise 而不是基于回调的 Ajax 工具，可以称之为`request(..)`。你可以实现自己的版本，就像我们所做的一样。但是，如果不得不为每个基于
+回调的工具定义支持 Promise 的封装，这样的开销会让你不太可能选择支持 Promise 的重构。
+
+Promise 没有为这个局限性直接提供答案。多数 Promise 库确实提供辅助工具，但即使没有库，也可以考虑如下的辅助工具：
+
+```javascript
+
+```
+
 [^the-revealing-constructor-pattern]: [显示构造器](https://blog.domenic.me/the-revealing-constructor-pattern/)
 [^race-condition]: [竟态条件](https://zh.wikipedia.org/wiki/%E7%AB%B6%E7%88%AD%E5%8D%B1%E5%AE%B3)
