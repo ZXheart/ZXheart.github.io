@@ -1924,7 +1924,7 @@ var p = new Promise(function (resolve, reject) {
 p.then(function (evt) {
   var btnId = evt.currentTarget.id
   return request('http://some.url.1/?id=' + btnId)
-}).then(function (text) {
+}).then(function (tex, cbt) {
   console.log(text)
 })
 ```
@@ -1987,8 +1987,198 @@ foo(11, 31, function (err, text) {
 Promise 没有为这个局限性直接提供答案。多数 Promise 库确实提供辅助工具，但即使没有库，也可以考虑如下的辅助工具：
 
 ```javascript
+// polyfill安全的guard检查
+if (!Promise.wrap) {
+  Promise.wrap = function (fn) {
+    return function () {
+      var args = [].slice.call(arguments)
 
+      return new Promise(function (resolve, reject) {
+        fn.apply(
+          null,
+          args.concat(function (err, v) {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(v)
+            }
+          })
+        )
+      })
+    }
+  }
+}
 ```
+
+好吧，这不只是一个简单的小工具。然而，尽管它看起来有点令人生畏，但是实际上并不像你想的那么糟糕。它接受一个函数，这个函数需要一个`error-first`风格的回调作为第一个
+参数，并返回一个新的函数。返回的函数自动创建一个 Promise 并返回，并替换回调，连接到 Promise 完成或拒绝。
+
+与其花费太多时间解释这个`Promise.wrap(..)`辅助工具的工作原理，还不如直接看看其使用方式：
+
+```javascript
+var request = Promise.wrap(ajax)
+request('http://some.url.1/').then()
+```
+
+哇，非常简单！
+
+`Promise.wrap(..)`并不产出 Promise。它产出的是一个将产生 Promise 的函数。在某种意义上，产生 Promise 的函数可以看作是一个 Promise 工厂。
+我提议将其命名为“Promisory”（Promise + factory）。
+
+把需要回调的函数封装为支持 Promise 的函数，这个动作有时被称为“提升”或“Promise 工厂化”。但是，对于得到的结果函数来说，除了“被提升函数”似乎就没有什么标准术语可称呼了。
+所以我更喜欢“Promisory”这个词，我认为它的描述更准确。
+
+> [!NOTE]
+> promisory 并不是编造的。它是一个真实的单词，意思是包含或传输一个 promise。这正是这些函数所做的，所以这个术语与其意义匹配的很完美。
+
+如果所有函数都已经是 promisory，我们就不需要自己构造了，所以这个额外的步骤有点可惜。但至少这个封装模式（通常）是重复的，所以我们可以像前面展示的那样把它
+放入`Promise.wrap(..)`辅助工具，以帮助我们的 promise 代码。
+
+所以，回到前面的例子，我们需要为`ajax(..)`和`foo(..)`都构造一个 promisory：
+
+```javascript
+// 为ajax(..)构造一个promisory
+var request = Promise.wrap(ajax)
+
+// 重构foo(..)，但使其外部成为基于外部回调的，
+// 与目前代码的其他部分保持通用
+// ———— 只在内部使用request(..)的promise
+function foo(x, y, cb) {
+  request('http://some.url.1/?x=' + x + '&y=' + y).then(function fulfilled(text) {
+    cb(null, text)
+  }, cb)
+}
+
+// 现在，为了这段代码的目的，为`foo(..)`构造一个promisory
+var betterFoo = Promise.wrap(foo)
+
+// 并使用这个promisory
+betterFoo(11, 31).then(
+  function fulfilled(text) {
+    console.log(text)
+  },
+  function rejected(err) {
+    console.error(err)
+  }
+)
+```
+
+当然，尽管我们在重构`foo(..)`以使用新的`request(..)`promisory，但是也可以使`foo(..)`本身成为一个 promisory，而不是保持基于回调的形式并需要构建和使用
+后续的`betterFoo(..)`promisory。这个决策就取决于`foo(..)`是否需要保持与代码库中其他部分兼容的基于回调的形式。
+
+考虑：
+
+```javascript
+// 现在`foo(..)`也是一个promisory，因为它委托了`request(..)`
+
+function foo(x, y) {
+  return request('http://some.url.1/?x=' + x + '&y=' + y)
+}
+
+foo(11, 31).then()
+```
+
+虽然原生 ES6 Promise 并没有提供辅助函数用于这样的 promisory 封装，但多数库都提供了这样的支持，或者你也可以构建自己的辅助函数。不管采用何种方式，解决 Promise 这个特定的限制
+都不需要太多代价（可对比回调地狱给我们带来的痛苦！）。
+
+### 无法取消的 Promise
+
+一旦创建了一个 Promise 并为其注册了完成和/或拒绝处理函数，如果出现某种情况使得这个任务悬而未决的话，你也没有办法从外部停止它的进程。
+
+> [!NOTE]
+> 很多 Promise 抽象库提供了工具来取消 Promise，但这个思路很可怕！很多开发者希望 Promise 的原生设计就具有外部取消功能，但问题是，这可能会使 Promise 的一个消费者或观察者
+> 影响其他消费者查看这个 Promise。这违背了未来值的可信性（外部不变性），但更坏的是，这是
+> [“远隔作用”（action at a distance）](<https://zh.wikipedia.org/wiki/%E8%BF%9C%E9%9A%94%E4%BD%9C%E7%94%A8_(%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%A7%91%E5%AD%A6)>)
+> 反模式的体现。不管看起来如何有用，这实际上会导致你重陷与使用回调同样的噩梦。
+
+考虑前面的 Promise 超时场景：
+
+```javascript
+var p = foo(42)
+
+Promise.race([p, timeoutPromise(3000)]).then(doSomething, handleError)
+
+p.then(function () {
+  // 即使在超时的情况下也会发生 :(
+})
+```
+
+这个“超时”相对于 promise p 是外部的，所以 p 本身还会继续运行，这一点可能并不是我们所期望的。
+
+一种选择是侵入式地定义你自己的决议回调：
+
+```javascript
+var OK = true
+var p = foo(42)
+
+Promise.race([
+  p,
+  timeoutPromise(300).catch(function (err) {
+    OK = false
+    throw err
+  }),
+]).then(doSomething, handleError)
+
+p.then(function () {
+  if (OK) {
+    // 只有没有超时情况下才会发生 :)
+  }
+})
+```
+
+这很丑陋。它可以工作，但是离理想实现还差很远。一般来说，应避免这样的情况。
+
+但如果没法避免的话，这个解决方案的丑陋应该是一个线索，它提示*取消*这个功能属于 Promise 之上更高级的抽象。我建议你应查看 Promise 抽象库以获得帮助，而不是 hack 自己的版本。
+
+> [!NOTE]
+> 我的 Promise 抽象库 asynquence 提供了这样一个抽象，还有一个为序列提供了`abort()`功能，这些内容都会在本部分的附录 A 中讨论。
+
+单独的一个 Promise 并不是一个真正的流程控制机制（至少不是很有意义），这正是*取消*所涉及的层次（流程控制）。这就是为什么 Promise 取消总是让人感觉很别扭。
+
+相比之下，集合在一起的 Promise 构成的链，我喜欢称之为一个“序列”，就是一个流程控制的表达，因此将取消定义在这个抽象层次上是合适的。
+
+单独的 Promise 不应该可取消，但是取消一个可序列是合理的，因为你不会像对待 Promise 那样把序列作为一个单独的不变值来传递。
+
+### Promise 性能
+
+这个特定的局限性既简单又复杂。
+
+把基本的基于回调的异步任务链与 Promise 链中需要移动的部分数量进行比较。很显然，Promise 进行的动作要多一些，这自然意味着它也会稍慢一些。请回想 Promise 提供的信任保障列表，
+再与你要在回调之上建立同样的保护自建的解决方案来比较一下。
+
+更多的工作，更多的保护。这些意味着 Promise 与不可信任的裸回调相比会更慢一些。这是显而易见的，也很容易理解。
+
+但会慢多少呢？呃，实际上，要精确回答这个问题极其困难。
+
+坦白地说，这有点像是拿苹果和桔子相比，所以这可能就是一个错误的问题。实际上们应该比较的是提供了同样保护的手工自建回调系统是否能够快于 Promise 实现。
+
+如果说 Promise 确实有一个真正的性能局限的话，那就是它们没有真正提供可信任性保护支持的列表以供选择（你总是得到全部）。
+
+虽然如此，如果我们承认 Promise 通常要比其非 Promise、非可信任回调的等价系统慢一点（假定有些情况下你认为可以接受可信任性的缺乏），这是否意味着应该完全避免 Promise，
+就好像你整个应用的唯一驱动力就是必须采用尽可能快的代码呢？
+
+合理性检查：如果你的代码有合理的理由这样要求，那么 JS 是否真的是实现这样任务的正确语言呢？我们可以优化 JS，使其高性能运行应用（参见第 5 章和第 6 章）。但是，耿耿于 Promise
+微小的性能损失而无视它提供的所有优点，真的合适吗？
+
+另一个微妙的问题是：Promise 使所有一切都成为异步的了，即有一些立即（同步）完成的步骤仍然会延迟到任务的下一步（参见第一章“JOB”）。这意味着一个 Promise 任务序列可能比完全通过回调
+连接的同样的任务序列运行得稍慢一点。
+
+当然，这里的问题是：本章介绍的 Promise 的这些优点是否值得付出这些微小的性能损失。
+
+我的观点是：几乎所有那些你可能认为 Promise 性能会慢到需要担心的情况，实际上都是通过绕开 Promise 可信任性和可组合性优化掉了它们带来的好处的反模式。
+
+取而代之的是，在默认情况下，你应该在代码中使用它们，然后对你应用的热路径进行性能分析。Promise 真的是性能瓶颈呢，还是只有理论上的性能下降呢？只有这样，
+具备了真实有效的性能测评（参见第 6 章），在这些识别出来的关键区域分离出 Promise 才是审慎负责的。
+
+Promise 稍慢一些，但是作为交换，你得到的是大量内建的可信任性、对 Zalgo 的/避免以及可组合性。可能局限性实际上并不是它们的真实表现，而是你缺乏发现其好处的眼光呢？
+
+## 复习
+
+Promise 非常好，请使用。它们解决了我们因只用回调的代码而备受困扰的*控制反转*问题。
+
+它们并没有摒弃回调，只是把回调的安排转交给了一个位于我们和其他工具之间的可信任的中介机制。
+
+Promise 链也开始提供（尽管并不完美）以顺序的方式表达异步流的一个更好的方式，这有助于我们的大脑更好的计划和维护异步 JS 代码。我们将在第 4 章看到针对这个问题的一种更好的解决方案！
 
 [^the-revealing-constructor-pattern]: [显示构造器](https://blog.domenic.me/the-revealing-constructor-pattern/)
 [^race-condition]: [竟态条件](https://zh.wikipedia.org/wiki/%E7%AB%B6%E7%88%AD%E5%8D%B1%E5%AE%B3)
