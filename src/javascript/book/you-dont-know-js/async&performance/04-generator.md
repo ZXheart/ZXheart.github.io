@@ -836,3 +836,369 @@ if (err) {
 ```
 
 生成器`yield`暂停的特性意味着我们不仅能够从异步函数调用得到看似同步的返回值，还可以同步捕获来自这些异步函数调用的错误！
+
+所以我们已经知道，我们可以把错误抛入生成器中，不过如果是从生成器向外抛出错误呢？正如你所料：
+
+```javascript
+function* main() {
+  var x = yield 'hello world'
+
+  yield x.toLowerCase() // 引发一个异常！
+}
+
+var it = main()
+
+it.next() // hello world
+
+try {
+  it.next(42)
+} catch (err) {
+  console.error(err) // TypeError: x.toLowerCase is not a function
+}
+```
+
+当然，也可以通过`throw..`手工抛出一个错误，而不是通过触发异常。
+
+甚至可以捕获通过`throw(..)`抛入生成器的同一个错误，基本上也就是给生成器一个处理它的机会；如果没有处理的话，迭代器代码就必须处理：
+
+```javascript
+function* main() {
+  var x = yield 'hello world'
+
+  // 永远不会到达这里
+  console.log(x)
+}
+
+var it = main()
+
+it.next()
+
+try {
+  // *main()会处理这个错误吗？看看吧？
+  it.throw('Oops')
+} catch (e) {
+  // 不行，没有处理！
+  console.error(e) // Oops
+}
+```
+
+在异步代码中使命囧出同步的错误处理（通过`try..catch`）在可读性和合理性方面都是一个巨大进步。
+
+## 生成器+Promise
+
+在前面的讨论中，我们展示了如何异步迭代生成器，这是一团乱麻似的回调在顺序性和合理性方面的巨大进步。但我们错失了很重要的两点：Promise 的可信任性和可组合性（参见第三章）！
+
+别担心，我们还会重获这些。ES6 中最完美的世界就是生成器（看似同步的异步代码）和 Promise（可信任可组合）的结合。
+
+但如何实现呢？
+
+回想一下第三章里在运行 Ajax 例子中基于 Promise 的实现方法：
+
+```javascript
+function foo(x, y) {
+  return request('http://some.url.1/?x=' + x + '&y=' + y)
+}
+
+fo(11, 31).then(
+  function (text) {
+    console.log(text)
+  },
+  function (err) {
+    console.error(err)
+  }
+)
+```
+
+在前面的运行 Ajax 例子的生成器代码中，`foo(..)`没有返回值（undefined），并且我们的迭代器控制代码并不关心`yield`出来的值。
+
+而这里支持 Promise 的`foo(..)`在发出 Ajax 调用之后返回了一个 promise。这暗示我们可以通过`foo(..)`构建一个 promise，然后通过生成器把它`yield`出来，然后迭代器控制代码
+就可以接受到这个 promise 了。
+
+但迭代器应该对这个 promise 做些什么呢？
+
+他应该侦听这个 promise 的决议（完成或拒绝），然后要么使用完成消息恢复生成器运行，要么向生成器抛出一个带有拒绝原因的错误。
+
+我再重复一遍，因为这一点非常重要。获得 Promise 和生成器最大效用的最自然的方法就是`yield`出来一个 Promise，然后通过这个 Promise 来控制生成器的迭代器。
+
+让我们来试一下！首先，把支持 Promise 的`foo(..)`和生成器`*main()`放在一起：
+
+```javascript
+function foo(x, y) {
+  return request('http://some.url.1/?x=' + x + '&y=' + y)
+}
+
+function* main() {
+  try {
+    var text = yield foo(11, 31)
+  } catch (e) {
+    console.error(e)
+  }
+}
+```
+
+这次重构代码中最有力的发现是，`*main()`之中的代码完全不需要改变！在生成器内部，不管什么值`yield`出来，都只是一个透明的实现细节，所以我们甚至没有意识到其发生，也不需要关心。
+
+但现在如何运行`*main()`呢？还有一些实现细节需要补充，来实现接受和连接`yield`出来的 promise，使它能够在决议之后恢复生成器。先从手工实现开始：
+
+```javascript
+var it = main()
+
+var p = it.next().value
+
+// 等待promise p决议
+p.then(
+  function (text) {
+    it.next(text)
+  },
+  function (err) {
+    it.throw(err)
+  }
+)
+```
+
+实际上，这并没有那么令人痛苦，对吧？
+
+这段代码看起来应该和我们前面手工组合通过`error-first`回调控制的生成器非常类似。除了没有`if(err){it.throw..}`，promise 已经为我们分离了完成（成功）和拒绝（失败），
+否则的话，迭代器控制是完全一样的。
+
+现在，我们已经隐藏了一些重要的细节。
+
+最重要的是，我们利用了已知`*main()`中只有一个需要支持 Promise 的步骤这一事实。如果想要能够实现 Promise 驱动的生成器，不管其内部有多少个步骤呢？我们当然不希望每
+个生成器手工编写不同的 Promise 链！如果有一种方法可以实现重复（即循环）迭代控制，每次会生成一个 Promise，等待决议后再继续，那该多好啊。
+
+还有，如果在`it.next(..)`调用过程中生成器（有意或无意）抛出一个错误会怎样呢？是应该退出呢，还是应该捕获这个错误并发送回去呢？类似的，如果通过`it.throw(..)`
+把一个 Promise 拒绝抛入生成器中，但它却没有受到处理就直接抛回了呢？
+
+### 支持 Promise 的 Generator Runner
+
+随着对这条道路的深入探索，你越来越意识到：“哇，如果有某个工具为我实现这些就好了。”关于这一点，你绝对没错。这是如此重要的一个模式，你绝对不希望搞错（或精疲力竭
+的一次又一次重复实现），所以最好是使用专门设计用来以我们前面展示的方式运行`Promise-yielding`生成器的工具。
+
+有几个 Promise 抽象库提供了这样的工具，包括我的 asynquence 库及其`runner(..)`，本部分的附录 A 中会介绍。
+
+但是，为了学习和展示的目的，我们还是自己定义一个独立工具，叫做`run(..)`：
+
+```javascript
+// 在此感谢Benjamin Gruenbaum（@benjamingr on GitHub）的巨大改进！
+
+function run(gen) {
+  var args = [].slice.call(arguments, 1),
+    it
+
+  // 在当前上下文中初始化生成器
+  it = gen.apply(this, args)
+
+  // 返回一个promise用于生成器完成
+  return Promise.resolve().then(function handleNext(value) {
+    // 运行至下一个yield出的值
+    var next = it.next(value)
+    return (function handleResult(next) {
+      // 生成器运行完毕了吗？
+      if (next.done) {
+        return next.value
+      } else {
+        // 否则继续运行
+        return Promise.resolve(next.value).then(
+          // 成功就恢复异步循环，把决议的值发回生成器
+          handleNext,
+          // 如果value是被拒绝的promise，
+          // 就把错误传回生成器进行出错处理
+          function handleErr(err) {
+            return Promise.resolve(it.throw(err)).then(handleResult)
+          }
+        )
+      }
+    })(next)
+  })
+}
+```
+
+诚如所见，你可能并不愿意编写这个复杂的工具，并且也会特别不希望为每个使用的生成器都重复这段代码。所以，一个工具或库中的辅助函数绝对是必要的。尽管如此，我还是
+建议你花费几分钟时间学习这段代码，以更好地理解生成器 + Promise 协同运作模式。
+
+如果在运行 Ajax 的例子中使用`run(..)`和`*main()`呢？
+
+```javascript
+function *main(){
+    / ..
+}
+run(main)
+```
+
+> [!NOTE]
+> 我们定义的`run(..)`返回一个 promise，一旦生成器完成，这个 promise 就会决议，或收到一个生成器没有处理的未捕获异常。这里并没有展示这种功能，但我们会在本章后面部分再介绍这一点。
+
+#### ES7:async 与 await？
+
+前面的模式 —— 生成器 yield 出 Promise，然后这个 Promise 控制生成器的迭代器来执行它，直到结束 —— 是非常强大有用的一种方法。如果我们能够无需库工具辅助函数（即`run(..)`）
+就能实现就好了。
+
+关于这一点，可能有一些好消息。在编写本书的时候，对于后 ES6、ES7 的时间框架，在这一方面增加语法支持的提案已经有了一些初期但很强势的支持。显然，现在确定细节还太早，
+但其形式很可能会类似如下：
+
+```javascript
+function foo(x, y) {
+  return request('http://some.url.1/?x=' + x + '&y=' + y)
+}
+async function main() {
+  try {
+    var text = await foo(11, 31)
+    console.log(text)
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+main()
+```
+
+可以看到，这里没有通过`run(..)`调用（意味着不需要库工具！）来触发和驱动`main()`，它只是被当作一个普通函数调用。另外，`main()`也不再声明为生成器函数了，它现在是
+一类新的函数：async 函数。最后，我们不在 yield 出 Promise，而是用 await 等待它决议。
+
+如果你 await 了一个 Promise，async 函数就会自动获知要做什么，它会暂停这个函数（就像生成器一样），直到 Promise 决议。我们并没有在这段代码中展示这一点，但是调用一个像`main()`
+这样的 async 函数会自动返回一个 promise。在函数完全结束之后，这个 promise 会决议。
+
+> [!TIP]
+> 有 C#经验的人可能很熟悉 async/await 愈发，因为它们基本上是相同的。
+
+从本质上说，这个提案就是把前面我们已经推导出来的模式写进规范，使其进入语法机制：组合 Promise 和看似同步的流程控制代码。这是两个最好的世界的结合，有效的
+实际解决了我们列出的回调方案的主要问题。
+
+这样的 ES7 提案已经存在，并有了初期的支持和热情，仅仅是这个事实就极大增加了这个异步模式对其未来重要性的信心。
+
+### 生成器中的 Promise 并发
+
+到目前为止，我们已经展示的都是 Promise+生成器下的单步异步流程。但是，现实世界中的代码常常会有多个异步步骤。
+
+如果不认真对待的话，生成器的这种看似同步的风格可能会让你陷入对自己异步并发组织方式的自满中，进而导致并不理想的性能模式。所以我们打算花点时间来研究一下各种方案。
+
+想想这样一个场景：你需要从两个不同的来源获取数据，然后把响应组合在一起形成第三个请求，最终把最后一条响应打印出来。第三章已经用 Promise 研究过一个类似的场景，但是
+让我们在生成器的环境下重新思考一下这个问题吧。
+
+你的第一直觉可能类似如下：
+
+```javascript
+function* foo() {
+  var r1 = yield request('http://some.url.1')
+  var r2 = yield request('http://some.url.2')
+
+  var r3 = yield request('http://some.url.3/?v=' + r1 + ',' + r2)
+
+  console.log(r3)
+}
+
+// 使用前面定义的工具run(..)
+run(foo)
+```
+
+这段代码可以工作，但是针对我们特定的场景而言，它并不是最优的。你能指出原因吗？
+
+因为请求`r1`和`r2`能够 —— 处于性能考虑也应该 —— 并发执行，但是在这段代码中，它们是一次执行的。直到请求 URL"http://some.url.1"完成后才通过Ajax获取URL"http://some.url.2"。
+这两个请求是相互独立的，所以性能更高的方案应该是让它们同时运行。
+
+但是，到底如何通过生成器和 yield 实现这一点呢？我们知道 yield 只是代码中一个单独的暂停点，并不可能同时在两个点上暂停。
+
+最自然有效的答案就是让异步流程基于 Promise，特别是基于它们时间无关的方式管理状态的能力（参见第三章“未来的值”）。
+
+最简单的方法：
+
+```javascript
+function* foo() {
+  // 让两个请求“并行”
+  var p1 = request('http://some.url.1')
+  var p2 = request('http://some.url.2')
+
+  // 等待p1和p2都决议
+  var r1 = yield p1
+  var r2 = yield p2
+
+  var r3 = yield request('http://some.url.3/?v=' + r1 + ',' + r2)
+  console.log(r3)
+}
+
+// 使用前面定义的工具run(..)
+run(foo)
+```
+
+为什么这和前面的代码片段不同呢？观察一下 yield 的位置。p1 和 p2 是并发执行（即“并行”）的用 Ajax 请求的 promise。哪一个先完成都无所谓，因为 promise
+会按照需要在决议状态保持任意长时间。
+
+然后我们使用接下来的 yield 语句等待并取得 promise 的决议（分别写入 r1 和 r2）。如果 p1 先决议，那么`yield p1`就会先恢复执行，然后等待`yield p2`恢复。如果 p2 先决议，它就会耐心
+保持其决议值等待请求，但是`yield p1`将会先等待，直到 p1 决议。
+
+不管哪种情况，p1 和 p2 都会并发执行，无论完成顺序如何，两者都要全部完成，然后才会发出`r3 = yield request(..)`Ajax 请求。
+
+这种流程控制模型如果听起来有点熟悉的话，是因为这基本上和我们在第三章中通过`Promise.all([ .. ])`工具实现的 gate 模式相同。因此，也可以这样表达这种控制流程：
+
+```javascript
+function* foo() {
+  // 让两个请求“并行”，并等待两个promise都决议
+  var results = yield Promise.all([request('http://some.url.1'), request('http://some.url.2')])
+
+  var r1 = results[0]
+  var r2 = results[1]
+
+  var r3 = yield request('http://some.url.3/?v=' + r1 + ',' + r2)
+  console.log(r3)
+}
+
+// 使用前面定义的工具run(..)
+run(foo)
+```
+
+> [!NOTE]
+> 就像我们在第三章中讨论过的，我们甚至可以通过 ES6 解构赋值，把`var r1 = ..`和`var r2 = ..`赋值语句简化为`var [r1,r2] = results`。
+
+换句话说，Promise 所有的并发能力在生成器+Promise 方法中都可以使用。所以无论在什么地方你的需求超过了顺序的`this-then-that`异步流程控制，Promise 很可能都是最好的选择。
+
+#### 隐藏的 Promise
+
+作为一个风格方面的提醒：要注意你的*生成器*内部包含了多少 Promise 逻辑。我们介绍的使用生成器实现异步的方法的全部要点在于创建简单、顺序、看似同步的代码，将异步的细节尽可能隐藏起来。
+
+比如，这可能是一个更简洁的方案：
+
+```javascript
+// 注：普通函数，不是生成器
+function bar(url1, url2) {
+  return Promise.all([request(url1), request(url2)])
+}
+
+function* foo() {
+  // 隐藏bar(..)内部基于Promise的并发细节
+  var results = yield bar('http://some.url.1', 'http://some.url.2')
+
+  var r1 = results[0]
+  var r2 = results[1]
+
+  var r3 = yield request('http://some.url.3/?v=' + r1 + ',' + r2)
+  console.log(r3)
+}
+// 使用前面定义的工具run(..)
+run(foo)
+```
+
+在`*foo()`内部，我们所做的一切就是要求`bar(..)`给我们一些 results，并通过 yield 来等待结果，这样更简洁也更清晰。我们不需要关心在底层是用`Promise.all([ .. ])`
+Promise 组合来实现这一切。
+
+我们把异步，实际上是 Promise，作为一个实现细节来看待。
+
+如果想要实现一系列高级流程控制的话，那么非常有用的做法是：把你的 Promise 逻辑隐藏在一个只从生成器代码中调用的函数内部。比如：
+
+```javascript
+// prettier-ignore
+function bar(){
+    Promise.all([
+        baz(..).then(..),
+        Promise.race([ .. ])
+    ]).then(..)
+}
+```
+
+有时候会需要这种逻辑，而如果把它直接放在生成器内部的话，那你就失去了几乎所有一开始使用生成器的理由。应该有意将这样的细节从生成器代码中抽象出来，以避免
+它把高层次的任务表达变得杂乱。
+
+创建代码除了要实现功能和保持性能之外，你还应该尽可能使代码易于理解和维护。
+
+> [!NOTE]
+> 对变成来说，抽象并不总是好事，很多时候它会增加复杂度以换取简洁性。但是在这个例子里，我相信，对生成器+Promise 异步代码来说，相比于其他实现，
+> 这种抽象更加健康。尽管如此，还是建议大家要注意具体情况具体分析，为你和你的团队做出正确的决定。
