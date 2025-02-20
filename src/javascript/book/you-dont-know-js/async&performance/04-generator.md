@@ -160,7 +160,7 @@ res.value // 42
 
 所以，这时赋值语句实际上就是`var y = 6 * 7`。现在，`return y`返回值 42 作为调用`it.next(7)`的结果。
 
-注意，这里有一点非常重要，但即使对于有经验的 JS 开发者也很有迷惑性：根据你的视角不同，`yield`和`next(..)`调用有一个不配。一般来说，需要的`next(..)`调用要比`yield`语句
+注意，这里有一点非常重要，但即使对于有经验的 JS 开发者也很有迷惑性：根据你的视角不同，`yield`和`next(..)`调用有一个不匹配。一般来说，需要的`next(..)`调用要比`yield`语句
 多一个，前面的代码片段有一个`yield`和两个`next(..)`调用。
 
 为什么会有这个不匹配？
@@ -169,4 +169,670 @@ res.value // 42
 
 #### 两个问题的故事
 
-实际上，你主要考虑的是哪部分代码会影响你是否感知到错位。
+实际上，主要考虑哪部分代码将影响是否存在感知不匹配。
+
+只考虑生成器代码:
+
+```javascript
+// prettier-ignore
+var y = x * (yield)
+return y
+```
+
+第一个`yield`基本上是提出了一个问题：“这里我应该插入什么值？”
+
+谁来回答这个问题呢？第一个`next()`已经运行，使得生成器启动并运行到此处，所以显然它无法回答这个问题。因此必须由第二个`next(..)`调用回答第一个`yield`提出的这个问题。
+
+看到不匹配了吗 —— 第二个对第一个？
+
+把视角转化一下：不从生成器的视角看这个问题，而是从迭代器的角度。
+
+为了恰当阐述这个视角，我们还需要解释一下：消息是双向传递的 —— `yield..`作为一个表达式可以发出消息响应`next(..)`调用，`next(..)`也可以向暂停的`yield`表达式发送值。
+
+考虑下面这段稍稍调整过的代码：
+
+```javascript
+function* foo(x) {
+  var y = x * (yield 'hello') // <-- yield a value!
+
+  return y
+}
+
+var it = foo(6)
+
+var res = it.next() // 第一个next()，并不传入任何东西
+console.log(res.value) // hello
+
+res = it.next(7) // 向等待的yield传入7
+console.log(res.value) // 42
+```
+
+`yield..`和`next(..)`这一对组合起来，*在生成器的执行过程中*构成了一个双向消息传递系统。
+
+那么只看下面一段*迭代器*代码：
+
+```javascript
+var res = it.next() // 第一个next()，不传入任何东西
+console.log(res.value) // hello
+
+res = it.next(7) // 向等待的yield传入7
+console.log(res.value) // 42
+```
+
+> [!NOTE]
+> 我们并没有向第一个`next()`调用发送值，这是有意为之。只有暂停的`yield`才能接受这样一个通过`next(..)`传递的值，而在生成器的起始处我们调用第一个`next()`时，
+> 还没有暂停的`yield`来接受这样一个值。规范和所有兼容浏览器都会默默丢弃传递给第一个`next()`的任何东西。传值过去仍然不是一个好思路，因为你创建了沉默的无效代码，
+> 这回让人迷惑。因此，启动生成器时一定要用不带参数的`next()`。
+
+第一个`next()`调用（没有参数的）基本上就是在提出一个问题：“生成器`*foo(..)`要给我的下一个值是什么”。谁来回答这个问题呢？第一个`yield 'hello'`表达式。
+
+看见了吗？这里没有不匹配。
+
+根据你认为提出问题的是谁，`yield`和`next(..)`调用之间要么有不匹配，要么有。
+
+但是，稍等！与`yield`语句的数量相比，还是多出了一个额外的`next()`。所以，最后一个`it.next(7)`调用再次提出了这样的问题：生成器将要产生的下一个值是什么。但是，
+再没有`yield`语句来回答这个问题了，是不是？那么谁来回答呢？
+
+`return`语句回答这个问题！
+
+如果你的生成器中没有`return`的话 —— 在生成器中和在普通函数中一样，`return`当然不是必须的 —— 总有一个假定的/隐式的`return`；（也就是 `return undefined`），它
+会在默认情况下回答最后的`it.next(7)`调用提出的问题。
+
+这样的提问和回答是非常强大的：通过`yield`和`next(..)`建立的双向消息传递。但目前还不清楚这些机制是如何与异步流程控制联系到一起的。会清楚的！
+
+### 多个迭代器
+
+从语法使用的方面来看，通过一个迭代器控制生成器的时候，似乎是在控制声明的生成器函数本身。但是有一个细微之处很容易忽略：每次构建一个*迭代器*，实际上就隐式构建了
+生成器的一个实例，通过这个*迭代器*来控制的是这个生成器实例。
+
+同一个生成器的多个实例可以同时运行，它们甚至可以彼此交互：
+
+```javascript
+function* foo() {
+  var x = yield 2
+  z++
+  var y = yield x * z
+  consol.log(x, y, z)
+}
+
+var z = 1
+
+var it1 = foo()
+var it2 = foo()
+
+var val1 = it1.next().value // 2
+var val2 = it2.next().value // 2
+
+val1 = it1.next(val2 * 10).value // 40 x:20 z:2
+val2 = it2.next(val1 * 5).value // 600 x:200 z:3
+
+it1.next(val2 / 2) // y:300 x:20 z:3
+it2.next(val1 / 4) // y:10 x:200 z:3
+```
+
+> [!WARNING]
+> 同一个生成器的多个实例并发运行的最常用处并不是这样的交互，而是生成器在没有输入的情况下，可能从某个独立连接的资源产生自己的值。下一节中我们会详细介绍值产生。
+
+我们简单梳理一下执行流程。
+
+1. `*foo()`的两个实例同时启动，两个`next()`分别从`yield 2`语句得到值 2。
+
+2. `val2 * 10`也就是`2 * 10`，发送到第一个生成器实例`it1`，因此 x 得到值 20。z 从 1 增加到 2，然后`20*2`通过`yield`发出，将`val1`设置为 40。
+
+3. `val1 * 5`也就是`40 * 5`，发送到第二个生成器实例`it2`，因此 x 得到值 200。z 再次从 2 递增到 3，然后`200 * 3`通过`yield`发出，将`val2`设置为 600。
+
+4. `val2 / 2`也就是`600 / 2`，发送到第一个生成器实例`it1`，因此 y 得到值 300，然后打印出 x y z 的值分别是 20 300 3。
+
+5. `val1 / 4`也就是`40 / 4`，发送到第二个生成器实例`it2`，因此 y 得到值 10，然后打印出 x y z 的值分别是 200 10 3。
+
+在脑海中运行一遍这个例子很有趣。理清楚了吗？
+
+#### 交替执行
+
+回想第一章中“运行至完成”一节的这个场景：
+
+```javascript
+var a = 1
+var b = 2
+
+function foo() {
+  a++
+  b = b * a
+  a = b + 3
+}
+
+function bar() {
+  b--
+  a = 8 + b
+  b = a * 2
+}
+```
+
+如果是普通的 JS 函数的话，显然，要么是`foo()`首先运行完毕，要么是`bar()`首先运行完毕，但`foo()`和`bar()`的语句不能交替执行。所以，前面的程序只有两种可能的输出。
+
+但是，使用生成器的话，交替执行（甚至在语句当中！）显然是可能的：
+
+```javascript
+var a = 1
+var b = 2
+
+function* foo() {
+  a++
+  yield
+  b = b * a
+  a = (yield b) + 3
+}
+
+function* bar() {
+  b--
+  yield
+  a = (yield 8) + b
+  b = a * (yield 2)
+}
+```
+
+根据迭代器控制的`*foo()`和`*bar()`调用的相对顺序不同，前面的程序可能会产生多种不同的结果。换句话说，通过两个生成器在共享的相同变量上的迭代交替执行，我们实际上
+可以（以某种模拟的方式）印证第 1 章讨论的理论上的多线程竟态条件环境。
+
+首先，来构建一个名为`step(..)`的辅助函数，用于控制*迭代器*：
+
+```javascript
+function step(gen) {
+  var it = gen()
+  var last
+
+  return function () {
+    // 不管yield出来的是什么，下一次都把它原样传回去！
+    last = it.next(last).value
+  }
+}
+```
+
+`step(..)`初始化了一个生成器来创建*迭代器*it，然后返回一个函数，这个函数被调用的时候会将*迭代器*向前迭代一步。另外，前面的`yield`发出的值会在下一步发送出去。
+于是，`yield 8`就是`8`，而`yield b`就是`b`（yield 发出时的值）。
+
+现在，只是为了好玩，我们来试验一下交替运行`*foo()`和`*bar()`代码块的效果。我们从乏味的基本情况开始，确保`*foo()`在`*bar()`之前完全结束（和第一章中做的一样）：
+
+```javascript
+// 确保重新设置a和b
+
+a = 1
+b = 2
+
+var s1 = step(foo)
+var s2 = step(bar)
+
+// 首次运行*foo()
+s1() // it.next(undefined) -> yield undefined -> last = undefined; a=1+1
+s1() // it.next(undefined) -> yield 2*2 -> last = 4； b=2*2
+s1() // it.next(4) -> (yield b) = 4 -> last = undefined； a=4+3=7
+
+// 现在运行*bar()
+s2() // it.next(undefined) -> yield undefined -> last = undefined； b=4-1
+s2() // it.next(undefined) -> yield 8 -> last = 8；
+s2() // it.next(8) -> yield 2 -> last = 2； a=8+3
+s2() // it.next(2) -> (yield 2) = 2 -> last = undefined; b=11*2
+
+console.log(a, b) // 11 22
+```
+
+最后的结果是 11 和 22，和第一章中的版本一样。现在交替执行顺序，看看 a 和 b 的值是如何改变的：
+
+```javascript
+// 确保重新设置a和b
+a = 1
+b = 2
+
+var s1 = step(foo)
+var s2 = step(bar)
+
+s2() // b-- -> b=1
+s2() // yield 8
+s1() // a++ -> a=2
+s2() // a = 8 + 1 = 9 ; yield 2
+s1() // b = 1 * 9 = 9 ; yield 9
+s1() // a = 9 + 3 = 12
+s2() // b = 9 * 2 = 18
+```
+
+在告诉你结果之前，你能推断出前面的程序运行后 a 和 b 的值吗？不要作弊！
+
+```javascript
+console.log(a, b) // 12 18
+```
+
+> [!NOTE]
+> 作为留给大家的练习，请试着重新安排`s1()`和`s2()`的调用顺序，看看还能够得到多少种结果组合。不要忘了，你总是需要 3 次`s1()`调用和 4 次`s2()`调用。
+> 回忆一下前面关于`next()`和`yield`匹配的讨论，想想为什么。
+
+当然，你基本不可能故意创建让人迷惑到这种程度的交替运行实际代码，因为这给理解代码带来了极大的难度。但这个练习很有趣，对于理解多个生成器如何在共享的作用域
+上并行运行也有指导意义，因为这个功能有很多用武之地。
+
+我们将在本章末尾更详细的讨论 generator 并发。
+
+## 生成器产生值
+
+在前面一节中，我们提到生成器的一种有趣用法是作为一种产生值的方式。这并不是本章的重点，但是如果不介绍一些基础的话，就会缺乏完整性了，特别是因为这正是“生成器”这个名字最初的使用场景。
+
+下面要偏一下题，先介绍一下*迭代器*，不过我们还会回来介绍它们与生成器的关系以及如何使用生成器来*生成值*。
+
+### 生产者与迭代器
+
+假定你要产生一系列值，其中每个值都与前面一个有特定的关系。要实现这一点，需要一个有状态的生产者能够记住其生成的最后一个值。
+
+可以实现一个直接使用函数闭包的版本（参见本系列的“作用域与闭包”部分），类似如下：
+
+```javascript
+var gimmeSomething = (function () {
+  var nextVal
+
+  return function () {
+    if (nextVal === undefined) {
+      nextVal = 1
+    } else {
+      nextVal = 3 * nextVal + 6
+    }
+    return nextVal
+  }
+})()
+
+gimmeSomething() // 1
+gimmeSomething() // 9
+gimmeSomething() // 33
+gimmeSomething() // 105
+```
+
+> [!NOTE]
+> 这里 nextVal 的计算逻辑已经简化了，但是从概念上说，我们希望直到下一次 gimmeSomething()调用发生时才计算下一个值（即 nextVal）。否则，一般来说，对
+> 更持久化或比起简单数字资源更受限的生产者来说，这可能就是资源泄漏的设计。
+
+生成任意数字序列并不是一个很实际的例子。但如果是想要从数据源生成记录呢？可以采用基本相同的代码。
+
+实际上，这个任务是一个非常通用的设计模式，通常通过迭代器来解决。*迭代器*是一个定义良好的接口，用于从一个生产者一步步得到一系列值。JS 迭代器的接口，
+与多数语言类似，就是每次想要从生产者得到下一个值的时候调用`next()`。
+
+可以为我们的数字序列生成器实现标准的*迭代器*接口：
+
+```javascript
+var something = (function () {
+  var nextVal
+
+  return {
+    // for...of循环需要
+    [Symbol.iterator]: function () {
+      return this
+    },
+
+    // 用于迭代器接口方法
+    next() {
+      if (nextVal === undefined) {
+        nextVal = 1
+      } else {
+        nextVal = 3 * nextVal + 6
+      }
+      return { done: false, value: nextVal }
+    },
+  }
+})()
+
+something.next().value // 1
+something.next().value // 9
+something.next().value // 33
+something.next().value // 105
+```
+
+> [!NOTE]
+> 我们将在“Iterable”一节中讲解为什么在这段代码中需要`[Symbol.iterator]:...`这一部分。从语法上说，这设计了两个 ES6 特性。首先，`[..]`语法被称为*计算属性名*（参
+> 见本系列的“this 和对象原型”部分）。这在对象术语定义中是指，指定一个表达式并用这个表达式的结果作为属性的名称。另外，`Symbol.iterator`是 ES6 预定义的特殊`Symbol`值
+> 之一（参见本系列的“ES6 与未来”部分）。
+
+`next()`调用返回一个对象。这个对象有两个属性：done 是一个 boolean 值，标识*迭代器*的完成状态；value 中放置迭代值。
+
+ES6 还新增了一个`for..of`循环，这意味着可以通过原生循环语法自动迭代标准*迭代器*：
+
+```javascript
+for (var v of something) {
+  console.log(v)
+
+  // 不要死循环！
+  if (v > 500) {
+    break
+  }
+}
+// 1 9 33 105 321 969
+```
+
+> [!NOTE]
+> 因为我们的*迭代器*something 总是返回`done:false`，因此这个`for..of`循环将永远运行下去，这也就是为什么我们要在里面放一个`break`条件。迭代器
+> 永不结束是完全没有问题的，但是也有一些情况下，*迭代器*会在有限的值集合上运行，并最终返回`done:true`。
+
+`for..of`循环在每次迭代中自动调用`next()`，它不会向`next()`传入任何值，并且会在接收到`done:true`之后自动停止。这对于在一组数据上循环很方便。
+
+当然，也可以手工在迭代器上循环，调用`next()`并检查`done:true`条件来确定何时停止循环：
+
+```javascript
+for (let ret; (ret = something.next()) && !ret.done; ) {
+  console.log(ret.value)
+
+  // 不要死循环！
+  if (ret.value > 500) {
+    break
+  }
+}
+
+// 1 9 33 105 321 969
+```
+
+> [!NOTE]
+> 这种手工 for 方法当然要比 ES6 的`for..of`循环语法丑陋，但其优点是，这样就可以在需要时向`next()`传递值。
+
+除了构造自己的*迭代器*，许多 JS 的内建数据结构（从 ES6 开始），比如 array，也有默认的*迭代器*：
+
+```javascript
+var a = [1, 3, 5, 7, 9]
+
+for (var v of a) {
+  console.log(v)
+}
+// 1 3 5 7 9
+```
+
+`for..of`循环向 a 请求它的*迭代器*，并自动使用这个迭代器迭代遍历 a 的值。
+
+> [!NOTE]
+> 这里可能看起来像是 ES6 一个奇怪的缺失，不过一般的 object 是故意不像 array 一样有默认的迭代器。这里我们并不会深入探讨其中的缘由。如果你只是想要迭代一个对象
+> 的所有属性的话（不需要保证特定的顺序），可以通过`Object.keys(..)`返回一个 array，类似于`for (var k of object.keys(obj)){ .. }`这样使用。这样在一个对象
+> 的键值上使用`for..of`循环与`for..in`循环类似，除了`Object.keys(..)`并不包含来自于`[[Prototype]]`链上的属性，而`for..in`则包含（参见本系列的“this 和对象原型”部分）。
+
+### iterable
+
+前面例子中的 something 对象叫做*迭代器*，因为它的接口中有一个`next()`方法。而与其紧密相关的一个术语是 iterable（可迭代），即指包含有一个可以迭代它所有值的迭代器的对象。
+
+从 ES6 开始，从一个 iterable 中提取迭代器的方法是：iterable 必须支持一个函数，其名称是专门的 ES6 符号值`Symbol.iterator`。调用这个函数时，它会返回一个迭代器。通常
+每次调用会返回一个全新的迭代器，虽然这一点并不是必须的。
+
+前面代码片段中的 a 就是一个 iterable。`for..of`循环自动调用它的`Symbol.iterator`函数来构建一个迭代器。我们当然也可以手工调用这个函数，然后使用它返回的迭代器：
+
+```javascript
+var a = [1, 3, 5, 7, 9]
+
+var it = a[Symbol.iterator]()
+it.next().value // 1
+it.next().value // 3
+it.next().value // 5
+// ...
+```
+
+前面的代码中列出了定义的 something，你可能已经注意到了这一行：
+
+```javascript
+[Symbol.iterator]: function () { return this}
+```
+
+这段有点令人疑惑的代码是将 something 的值（迭代器 something 的接口）也构建成为一个 iterable。现在它既是 iterable，也是迭代器。然后我们把 something 传给`for..of`循环：
+
+```javascript
+for (var v of something) {
+  // ..
+}
+```
+
+`for..of`循环期望 something 是 iterable，于是他寻找并调用它的`Symbol.iterator`函数。我们将这个函数定义为就是简单的`return this`，也就是把它自身返回，而`for..of`循环并不知情。
+
+### 生成器迭代器
+
+了解了迭代器的背景，让我们把注意力转回生成器上。可以把生成器看作一个值的生产者，我们通过迭代器接口的`next()`调用一次提取出一个值。
+
+所以，严格来说，生成器本身并不是 iterable，尽管非常类似 —— 当你执行一个生成器，就得到了一个迭代器：
+
+```javascript
+function* foo() {
+  // ..
+}
+
+var it = foo()
+```
+
+可以通过生成器实现前面的这个 something 无限数字序列生产者，类似这样：
+
+```javascript
+function* something() {
+  var nextVal
+
+  while (true) {
+    if (nextVal === undefined) {
+      nextVal = 1
+    } else {
+      nextVal = 3 * nextVal + 6
+    }
+
+    yield nextVal
+  }
+}
+```
+
+> [!NOTE]
+> 通常在实际的 JS 程序中使用`while..true`循环时非常糟糕的主意，至少如果其中没有`break`或`return`的话是这样，因为它有可能会同步的无限循环，并阻塞和锁住浏览器 UI。
+> 但是，如果在生成器中有`yield`的话，使用这样的循环就完全没有问题。因为生成器会在每次迭代中暂停，通过 yield 返回到主程序或事件循环队列中。简单的说就是：“生成
+> 器把`while..true`带回了 JS 变成的世界！”
+
+这样就简单明确多了，是不是？因为生成器会在每个 yield 处暂停，函数`*something()`的状态（作用域）会被保持，即意味着不需要闭包在调用之间保持变量状态。
+
+这段代码不仅更简洁，我们不需要构造自己的迭代器接口，实际上也更合理，因为它更清晰地表达了意图。比如，`while..true`循环告诉我们这个生成器就是永远运行：
+只要我们一直索要，它就会一直生成。
+
+现在，可以通过`for..of`循环使用我们雕琢过的新的`*something()`生成器。你可以看到，其工作方式基本是相同的：
+
+```javascript
+for (var v of something()) {
+  console.log(v)
+
+  // 不要死循环！
+  if (v > 500) {
+    break
+  }
+}
+// 1 9 33 105 321 969
+```
+
+但是，不要忽略了这段`for(var v of something())..`！我们并不是像前面的例子那样把 something 当作一个值来引用，而是调用了`*something()`生成器以得到
+它的迭代器供`for..of`循环使用。
+
+如果认真考虑的话，你也许会从这段生成器与循环的交互中提出两个问题。
+
+- 为什么不能用`for(var v of something)..`？因为这里的 something 是生成器，并不是 iterable。我们需要调用`something()`来构造一个生产者供`for..of`循环迭代。
+
+- `something()`调用产生一个迭代器，但`for..of`循环需要的是一个`iterable`，对吧？是的。生成器的迭代器也有一个`Symbol.iterator`函数，基本上这个函数做的就是`return this`，
+  和我们前面定义的`iterable something`一样。换句话说，生成器的迭代器也是一个 iterable！
+
+#### 停止生成器
+
+在前面的例子中，看起来似乎`*something()`生成器的迭代器实例在循环中的`break`调用之后就永远留在了挂起状态。
+
+其实有一个隐藏的特性会帮助你管理此事。`for..of`循环的“异常结束”（也就是“提前终止”），通常由`break`、`return`或者未捕获异常引起，会向生成器的迭代器发送一个信号使其终止。
+
+> [!NOTE]
+> 严格地说，在循环正常结束之后在，`for..of`循环也会向迭代器发送这个信号。对于生成器来说，这本质上是没有意义的操作，因为生成器的迭代器需要先完成`for..of`循环才能结束。
+> 但是，自定义的迭代器可能会需要从`for..of`循环的消费者那里接收这个额外的信号。
+
+尽管`for..of`循环会自动发送这个信号，但你可能会希望向一个迭代器手工发送这个信号。可以通过调用`return(..)`实现这一点。
+
+如果在生成器内有`try..finally`语句，它将总是运行，即使生成器已经外部结束。如果需要清理资源的话（数据库连接等），这一点非常有用：
+
+```javascript
+function* something() {
+  try {
+    var nextVal
+
+    while (true) {
+      if (nextVal === undefined) {
+        nextVal = 1
+      } else {
+        nextVal = 3 * nextVal + 6
+      }
+      yield nextVal
+    }
+  } finally {
+    // 清理子句
+    console.log('cleaning up!')
+  }
+}
+```
+
+之前的例子中，`for..of`循环内的 break 会触发 finally 语句。但是，也可以在外部通过`return(..)`手工终止生成器的迭代器实例：
+
+```javascript
+var it = something()
+
+for (var v of it) {
+  console.log(v)
+
+  // 不要死循环！
+  if (v > 500) {
+    console.log(
+      // 完成生成器的迭代器
+      it.return('hello world').value
+      // it.return('hello world') // { value: 'hello world', done: true }
+    )
+    // 这里不需要 break
+  }
+}
+
+// 1 9 33 105 321 969
+// cleaning up!
+// hello world
+```
+
+调用`it.return(..)`之后，它会立即终止生成器，这当然会运行`finally`语句。另外，它还会把返回的`value`设置为传入`return(..)`的内容，这也就是`hello world`被传出
+去的过程。现在我们也不需要包含`break`语句了，因为生成器的迭代器已经被设置为`done:true`，所以`for..of`循环会再下一个迭代终止。
+
+生成器的名字大多来自这种*消费生产值（consuming produced values）*的用例。但是，这里要再次申明，这只是生成器的用法之一，坦白地说，甚至不是这本书重点关注的用途。
+
+既然对生成器的工作机制有了更完整的理解，那接下来就可以把关注转向如何把生成器应用于异步开发了。
+
+## 异步迭代生成器
+
+生成器与异步编码模式及解决回调问题等，有什么关系呢？让我们来回答这个重要的问题。
+
+我们应该重新讨论第三章中的一个场景。回想一下回调方法：
+
+```javascript
+function foo(x, y, cb) {
+  ajax('http://some.url.1/?x=' + x + '&y=' + y, cb)
+}
+
+foo(11, 31, function (err, text) {
+  if (err) {
+    console.error(err)
+  } else {
+    console.log(text)
+  }
+})
+```
+
+如果想要通过生成器来表达同样的任务流程控制，可以这样实现：
+
+```javascript
+function foo(x, y) {
+  ajax('http://some.url.1/?x=' + x + '&y=' + y, function (err, data) {
+    if (err) {
+      // 向*main()抛出一个错误
+      it.throw(err)
+    } else {
+      // 用收到的data恢复*main()
+      it.next(data) // { value: undefined, done: true }
+    }
+  })
+}
+
+function* main() {
+  try {
+    var text = yield foo(11, 31)
+    console.log(text)
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+var it = main()
+
+// 这里启动！
+it.next() // { value: undefined, done: false }
+```
+
+第一眼看上去，与之前的回调代码对比起来，这段代码更长一些，可能也更复杂一些。但是，不要被表面现象欺骗了！生成器代码实际上要好得多！不过解释这一点还是比较复杂的。
+
+首先，让我们查看一下最重要的这段代码：
+
+```javascript
+// prettier-ignore
+var text = yield foo(11, 31)
+console.log(text)
+```
+
+请先花点时间思考一下这段代码是如何工作的。我们调用了一个普通函数`foo(..)`，而且显然能够从 Ajax 调用中得到 text，即使它是异步的。
+
+这怎么可能呢？如果你回想一下第 1 章的开始部分的话，我们给出了几乎相同的代码：
+
+```javascript
+var data = ajax('..url 1..')
+console.log(data)
+```
+
+但是，这段代码不能工作！你能指出其中的区别吗？区别就在于生成器中使用的`yield`。
+
+这就是奥秘所在！正是这一点使得我们看似阻塞同步的代码，实际上并不会阻塞整个程序，它只是暂停或阻塞了生成器本身的代码。
+
+在`yield foo(11, 31)`中，首先调用`foo(11, 31)`，它没有返回值（即返回 undefined），所以我们发出了一个调用来请求数据，但实际上之后做的是`yield undefined`。
+这没问题，因为这段代码当前并不依赖`yield`出来的值来做任何事情。本章后面会再次讨论这一点。
+
+这里并不是在消息传递的意义上使用`yield`，而是将其用于流程控制实现暂停/阻塞。实际上，它还是会有消息传递，但只是生成器恢复运行之后的单项消息传递。
+
+所以，生成器在`yield`处暂停，本质上是在提出一个问题：“我应该返回什么值来赋给变量 text？”谁来回答这问题呢?
+
+看一下`foo(..)`。如果这个 Ajax 请求成功，我们调用:
+
+```javascript
+it.next(data)
+```
+
+这会用响应数据恢复生成器，意味着我们暂停的`yield`表达式直接接收到了这个值。然后随着生成器代码继续运行，这个值被赋给局部变量 text。
+
+很酷吧？
+
+回头往前看一步，思考一下这意味着什么。我们在生成器内部有了看似完全同步的代码（除了 yield 关键字本身），但隐藏在背后的是，在`foo(..)`内的运行可以完全异步。
+
+这是巨大的改进！对于我们前面陈述的回调无法以顺序同步的、符合我们大脑思考模式的方式表达异步这个问题，这是一个近乎完美地解决方案。
+
+从本质上而言，我们把异步作为实现细节抽象了出去，使得我们可以已同步顺序的形式追踪流程控制：“发出一个 Ajax 请求，等它完成之后打印出响应结果。”并且，当然，我们
+只在这个流程控制中表达了两个步骤，而这种表达能力是可以无限扩展的，以便我们无论需要多少步骤都可以表达。
+
+> [!TIP]
+> 这是一个很重要的领悟，回过头去把上面三段重读一遍，让它融入你的思想吧。
+
+### 同步错误处理
+
+前面的生成器代码甚至还给我们带来了更多其它的好处。让我们把注意力转移到生成器内部的`try..catch`：
+
+```javascript
+try {
+  var text = yield foo(11, 31)
+  console.log(text)
+} catch (err) {
+  console.error(err)
+}
+```
+
+这是如何工作的呢？调用`foo(..)`是异步完成的，难道`try..catch`不是无法捕获异步错误，就像我们在第 3 章中看到的一样吗？
+
+我们已经看到`yield`是如何让赋值语句暂停来等待`foo(..)`完成，使得响应完成后可以被赋给`text`。精彩的部分在于`yield`暂停也使得生成器能够不过错误。通过这段前面列出的
+代码把错误抛出到生成器中：
+
+```javascript
+if (err) {
+  // 向*main()抛出一个错误
+  it.throw(err)
+}
+```
+
+生成器`yield`暂停的特性意味着我们不仅能够从异步函数调用得到看似同步的返回值，还可以同步捕获来自这些异步函数调用的错误！

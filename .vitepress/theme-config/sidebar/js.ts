@@ -87,6 +87,7 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
         { text: 'proxy', link: 'advanced/01-proxy' },
         { text: 'extend-es5', link: 'advanced/02-extend-es5' },
         { text: 'copy', link: 'advanced/03-copy' },
+        { text: 'generator', link: 'advanced/04-generator' },
       ],
     },
     {
