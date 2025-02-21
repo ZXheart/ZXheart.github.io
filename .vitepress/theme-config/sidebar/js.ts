@@ -11,6 +11,7 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
         { text: '空值合并运算符', link: 'basic/03-nullish-coalescing-operator' },
         { text: 'new.target', link: 'basic/04-new.target' },
         { text: '稀疏数组', link: 'basic/05-sparse-arrays' },
+        { text: 'for', link: 'basic/06-for' },
         {
           text: 'Array',
           collapsed: true,
