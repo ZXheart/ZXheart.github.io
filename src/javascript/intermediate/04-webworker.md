@@ -34,9 +34,9 @@ worker.onmessage = e => {
 }
 ```
 
-## 尝试:
+## 专用 Worker
 
-三个文件在同一个目录下，启动一个本地服务。worker 需要运行在 http/s 协议下。
+启动一个本地服务。worker 需要运行在 http/s 协议下。
 
 ### index.html
 
@@ -87,4 +87,60 @@ function fibonacci(n) {
   }
   return fibonacci(n - 1) + fibonacci(n - 2)
 }
+```
+
+## 共享 Worker
+
+`SharedWorker`是一种 Web Worker，它允许多个浏览器上下文（如多个标签页，iframe 或同一标签页中的不同脚本）共享同一个 WOrker 实例。`SharedWorker`
+只能在同源（相同协议、域名和端口）下的多个标签或 iframe 中共享，不能跨域共享。
+
+### index.html
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Index</title>
+  </head>
+  <body>
+    <a href="./about.html" id="to-about">to about</a>
+    <script>
+      const sharedWorker = new SharedWorker('./shared-worker.js')
+      sharedWorker.port.start()
+      sharedWorker.port.postMessage('Hello from index')
+      sharedWorker.port.addEventListener('message', e => {
+        console.log('Message from shared worker:', e.data)
+      })
+    </script>
+  </body>
+</html>
+```
+
+### about.html
+
+```html
+<a href="./index.html" id="to-index">to index</a>
+<script>
+  const sharedWorker = new SharedWorker('./shared-worker.js')
+  sharedWorker.port.start()
+  sharedWorker.port.postMessage('Hello from about')
+  sharedWorker.port.addEventListener('message', e => {
+    console.log('Message from shared worker:', e.data)
+  })
+</script>
+```
+
+### shared-worker.js
+
+```javascript
+addEventListener('connect', e => {
+  const port = e.ports[0]
+  port.start()
+  port.addEventListener('message', e => {
+    const msg = e.data + ' handled by shared worker'
+    port.postMessage(msg)
+  })
+})
 ```

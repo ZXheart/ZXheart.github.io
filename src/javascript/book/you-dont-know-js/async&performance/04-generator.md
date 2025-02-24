@@ -2076,7 +2076,7 @@ function foo(url) {
 var it = foo('http://some.url.1')
 ```
 
-接下来要观察到的是，生成器时通过暂停自己的作用域/状态实现它的“魔法”的。可以通过函数闭包（参见本系列的“作用域和闭包”部分）来模拟这一点。为了理解这样的代码
+接下来要观察到的是，生成器是通过暂停自己的作用域/状态实现它的“魔法”的。可以通过函数闭包（参见本系列的“作用域和闭包”部分）来模拟这一点。为了理解这样的代码
 是如何编写的，我们先给生成器的各个部分标注上状态值：
 
 ```javascript
@@ -2101,7 +2101,7 @@ function* foo(url) {
 ```
 
 > [!NOTE]
-> 为了更精确的展示，我们使用临时变量 TMP1 把`val = yield request..`语句分成了两个部分。`request(..)`在状态 1 发生，其完成值辅给 val 发生在状态 2。
+> 为了更精确的展示，我们使用临时变量 TMP1 把`val = yield request..`语句分成了两个部分。`request(..)`在状态 1 发生，其完成值赋给 val 发生在状态 2。
 > 当我们把代码转换成其非生成器等价时，会去掉这个中间变量 TMP1。
 
 换句话说，1 是起始状态，2 是`request(..)`成功后的状态，3 是`request(..)`失败的状态。你大概能够想象出如何把任何额外的 yield 步骤编码为更多的状态。
@@ -2160,5 +2160,156 @@ function foo(url) {
 现在需要定义迭代器函数的代码，使这些函数正确调用`process(..)`：
 
 ```javascript
+function foo(url) {
+  // 管理生成器状态
+  var state
 
+  // 生成器变量范围声明
+  var val
+
+  function process(v) {
+    switch (state) {
+      case 1:
+        console.log('requesting:', url)
+        return request(url)
+      case 2:
+        val = v
+        console.log(val)
+        break
+      case 3:
+        var err = v
+        console.log('Oops:', err)
+        return false
+    }
+  }
+
+  // 构造并返回一个生成器
+  return {
+    next: function (v) {
+      // 初始状态
+      if (!state) {
+        state = 1
+        return {
+          done: false,
+          value: process(),
+        }
+      }
+      // yield成功恢复
+      else if (state == 1) {
+        state = 2
+        return {
+          done: true,
+          value: process(v),
+        }
+      }
+      //生成器完成
+      else {
+        return {
+          done: true,
+          value: undefined,
+        }
+      }
+    },
+    throw: function (e) {
+      // 唯一的显式错误处理在状态1
+      if (state == 1) {
+        state = 3
+        return {
+          done: true,
+          value: process(e),
+        }
+      }
+      // 否则错误就不会处理，所以只把它抛回
+      else {
+        throw e
+      }
+    },
+  }
+}
 ```
+
+这段代码是如何工作的呢？
+
+1. 对迭代器的`next()`的第一个调用会把生成器从未初始化状态转移到状态 1，然后调用`process()`来处理这个状态。`request(..)`的返回值是对应 Ajax 响应的 promise，
+   作为 value 属性从`next()`调用返回。
+
+2. 如果 Ajax 请求成功，第二个`next(..)`调用应该发送 Ajax 响应值进来，这会把状态转移到状态 2.再次调用`process(..)`（这次包括传入的 Ajax 响应值），从`next(..)`
+   返回的 value 属性将是 undefined。
+
+3. 然而，如果 Ajax 请求失败的话，就会使用错误调用`throw(..)`，这会把状态 1 转移到 3（而非 2）.再次调用`process(..)`，这一次包含错误值。这个 case 返回 false，
+   被作为`throw(..)`调用返回的 value 属性。
+
+从外部来看（也就是说，只与迭代器交互），这个普通函数`foo(..)`与生成器`*foo(..)`的工作几乎完全一样。所以我们已经成功地把 ES6 生成器转为了前 ES6 兼容代码！
+
+然后就可以手工实例化生成器并控制它的迭代器了，调用`var it = foo(..)`和`it.next(..)`等。甚至更好的是，我们可以把它传给前面定义的工具`run(..)`，就像`run(foo,'..')`。
+
+### 自动转换
+
+前面的 ES6 生成器到前 ES6 等价代码的手工推导练习，向我们教授了概念上生成器是如何工作的。但是，这个变换非常复杂，并且对于代码中的其他生成器而言也是不可移植的。
+这部分工具通过手工实现十分不实际，会完全抵消生成器的一切优势。
+
+但幸运的是，已经有一些工具可以自动把 ES6 生成器转换为前面小节中我们推导出来的结果那样的代码。它们不仅会为我们完成这些笨重的工作，还会处理我们忽略的几个枝节问题。
+
+regenerator 就是这样的一个[工具](https://facebook.github.io/regenerator/)，出自 Facebool 的几个聪明人。
+
+如果使用 regenerator 来转换前面的生成器的话，以下是产生的代码（本书写作之时）：
+
+```javascript
+// request(..)是一个支持promise的Ajax工具
+
+var foo = regeneratorRuntime.mark(function foo(url) {
+  var val
+  return generatorRuntime.wrap(
+    function foo$(context$1$0) {
+      while (1)
+        switch ((context$1$0.prev = context$1$0.next)) {
+          case 0:
+            context$1$0.prev = 0
+            console.log('requesting:', url)
+            context$1$0.next = 4
+            return request(url)
+          case 4:
+            val = context$1$0.sent
+            console.log(val)
+            context$1$0.next = 12
+            break
+          case 8:
+            context$1$0.prev = 8
+            context$1$0.t0 = context$1$0.catch(0)
+            console.log('Oops:', context$1$0.t0)
+            return context$1$0.abrupt('return', false)
+          case 12:
+          case 'end':
+            return context$1$0.stop()
+        }
+    },
+    foo,
+    this,
+    [[0, 8]]
+  )
+})
+```
+
+这与我们手工推导的结果有一些明显的相似之处，比如那些`switch/case`语句，而且我们甚至看到了移出闭包的 val ，就像我们做的一样。
+
+当然，一个不同之处是，regenerator 的变换需要一个辅助库 regeneratorRuntime，其中包含了管理通用生成器和迭代器的所有可复用逻辑。这些重复代码中有很多和我们的版本不同，
+但即使这样，很多概念还是可以看到的，比如`context$1$0.next = 4`记录生成器的下一个状态。
+
+主要的收获是，生成器不再局限于只能在 ES6+环境中使用。一旦理解了这些概念，就可以在代码中使用，然后使用工具将其变换为与旧环境兼容的代码。
+
+这比仅仅将修改后的 Promise API 用作前 ES6 Promise 所做的工作要多得多，但是，付出的代价是值得的，因为在实现以合理的、明智的、看似同步的、顺序的方式表达异步流程方面，
+生成器的优势太多了。
+
+一旦迷上了生成器，就再也不会想回到那一团乱麻的异步地狱回调中了。
+
+## 复习
+
+生成器是 ES6 的一个新的函数类型，它并不像普通函数那样总是运行到结束。取而代之的是，生成器可以在运行当中（完全保持其状态）暂停，并且将来再从暂停的地方恢复运行。
+
+这种交替的暂停和恢复是合作性的而不是抢占式的，这意味着生成器具有独一无二的能力来暂停自身，这是通过关键字 yield 实现的。不过，只有控制生成器的迭代器具有
+恢复生成器的能力（通过`next(..)`）。
+
+在异步控制流程方面，生成器的关键优点是：生成器内部的代码是以自然的同步/顺序方式表达任务的一系列步骤。其技巧在于，我们把可能的异步隐藏在了关键字 yield 的后面，
+把异步移动到控制生成器的迭代器的代码部分。
+
+换句话说，生成器为异步代码保持了顺序、同步、阻塞的代码模式，这使得大脑可以更自然地追踪代码，解决了基于回调的异步的两个关键缺陷之一。
