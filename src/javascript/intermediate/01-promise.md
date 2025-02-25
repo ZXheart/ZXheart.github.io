@@ -124,6 +124,13 @@ class ZPromise {
       return
     }
 
+    if (typeof MutationObserver === 'function') {
+      const observer = new MutationObserver(fn)
+      observer.observe(document.body, { attributes: true })
+      document.body.setAttribute('kkb', Math.random())
+      return
+    }
+
     if (typeof process === 'object' && process.nextTick) {
       process.nextTick(fn)
       return
