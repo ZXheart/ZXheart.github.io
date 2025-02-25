@@ -4,7 +4,7 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
   return [
     {
       text: 'Basic',
-      collapsed: false,
+      collapsed: true,
       items: [
         { text: '注释', link: 'basic/01-comments' },
         { text: '逻辑运算符', link: 'basic/02-logical-operators' },
@@ -66,7 +66,7 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
     },
     {
       text: 'Intermediate',
-      collapsed: false,
+      collapsed: true,
       items: [
         { text: 'medium', link: 'intermediate/intermediate' },
         { text: 'implement promise', link: 'intermediate/01-promise' },
@@ -80,11 +80,12 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
         { text: 'event-loop-model', link: 'intermediate/09-event-loop-model' },
         { text: 'apply.bind', link: 'intermediate/10-apply.bind' },
         { text: 'prototype-diagram', link: 'intermediate/11-prototype-diagram' },
+        { text: 'fibonacci', link: 'intermediate/12-fibonacci' },
       ],
     },
     {
       text: 'Advanced',
-      collapsed: false,
+      collapsed: true,
       items: [
         { text: 'proxy', link: 'advanced/01-proxy' },
         { text: 'extend-es5', link: 'advanced/02-extend-es5' },
@@ -97,7 +98,7 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
       collapsed: true,
       items: [
         {
-          text: "You Don't Know JS",
+          text: "You Don't Know JS - 1ed",
           collapsed: true,
           items: [
             {
@@ -149,15 +150,21 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
                 { text: 'generator', link: 'book/you-dont-know-js/async&performance/04-generator' },
                 { text: 'program performance', link: 'book/you-dont-know-js/async&performance/05-program-performance' },
                 { text: 'benchmarking & tuning', link: 'book/you-dont-know-js/async&performance/06-benchmarking-tuning' },
-                { text: 'appendixA tail call optimization', link: 'book/you-dont-know-js/async&performance/appendixA' },
+                { text: 'appendixA', link: 'book/you-dont-know-js/async&performance/appendixA' },
               ],
             },
           ],
         },
         {
-          text: 'some book',
+          text: "You Don't Know JS - 2ed",
           collapsed: true,
-          items: [{ text: 'this', link: 'book/you-dont-know-js/03-object' }],
+          items: [
+            {
+              text: 'get started',
+              collapsed: true,
+              items: [{ text: 'what is JavaScript', link: 'book/you-dont-know-js-2ed/get-started/01-what-is-js' }],
+            },
+          ],
         },
       ],
     },

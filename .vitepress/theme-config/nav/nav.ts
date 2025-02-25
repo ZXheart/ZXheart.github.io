@@ -13,7 +13,7 @@ export function nav(): DefaultTheme.NavItem[] {
         { text: 'Basic', link: '/javascript/basic/01-comments', activeMatch: '/basic/' },
         { text: 'Intermediate', link: '/javascript/intermediate/intermediate', activeMatch: '/intermediate/' },
         { text: 'Advanced', link: '/javascript/advanced/01-proxy', activeMatch: '/advanced/' },
-        { text: 'Book', link: '/javascript/book/you-dont-know-js/this&object-prototype/01-this', activeMatch: '/this' },
+        { text: 'Book', link: '/javascript/book/you-dont-know-js/scope&closures/01-what-is-scope', activeMatch: '/book' },
       ],
       activeMatch: '/javascript/',
     },
