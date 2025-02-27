@@ -94,11 +94,18 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
       ],
     },
     {
+      text: 'funFacts',
+      collapsed: true,
+      items: [
+        { text: 'SmooshGate', link: 'fun-facts/01-smoosh-gate' },
+      ],
+    },
+    {
       text: 'Book',
       collapsed: true,
       items: [
         {
-          text: "You Don't Know JS - 1ed",
+          text: 'You Don\'t Know JS - 1ed',
           collapsed: true,
           items: [
             {
@@ -156,7 +163,7 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
           ],
         },
         {
-          text: "You Don't Know JS - 2ed",
+          text: 'You Don\'t Know JS - 2ed',
           collapsed: true,
           items: [
             {
