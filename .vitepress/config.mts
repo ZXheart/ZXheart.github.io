@@ -4,7 +4,7 @@ import UnoCSS from 'unocss/vite'
 
 import { defineConfig } from 'vitepress'
 
-import { nav, sidebarCSS, sidebarEg, sidebarGithub, sidebarJS, sidebarNodejs, sidebarOthers, sidebarVitePress, sidebarVueRouter } from './theme-config'
+import { nav, sidebarCSS, sidebarEg, sidebarGithub, sidebarJS, sidebarNodejs, sidebarOthers, sidebarVitePress, sidebarVue } from './theme-config'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -45,7 +45,7 @@ export default defineConfig({
       '/vite-press/': { base: '/vite-press/', items: sidebarVitePress() },
       '/css/': { base: '/css/', items: sidebarCSS() },
       '/nodejs/': { base: '/nodejs/', items: sidebarNodejs() },
-      '/vue-router/': { base: '/vue-router/', items: sidebarVueRouter() },
+      '/vue/': { base: '/vue/', items: sidebarVue() },
       '/others/': { base: '/others/', items: sidebarOthers() },
     },
     socialLinks: [{ icon: 'github', link: 'https://github.com/ZXheart/ZXheart.github.io' }],

@@ -13,7 +13,8 @@ export function nav(): DefaultTheme.NavItem[] {
         { text: 'Basic', link: '/javascript/basic/01-comments', activeMatch: '/basic/' },
         { text: 'Intermediate', link: '/javascript/intermediate/intermediate', activeMatch: '/intermediate/' },
         { text: 'Advanced', link: '/javascript/advanced/01-proxy', activeMatch: '/advanced/' },
-        { text: 'Book', link: '/javascript/book/you-dont-know-js/scope&closures/01-what-is-scope', activeMatch: '/book' },
+        { text: 'FunFacts', link: '/javascript/fun-facts/01-smoosh-gate', activeMatch: '/fun-facts/' },
+        { text: 'Book', link: '/javascript/book/you-dont-know-js/scope&closures/01-what-is-scope', activeMatch: '/book/' },
       ],
       activeMatch: '/javascript/',
     },
@@ -48,9 +49,12 @@ export function nav(): DefaultTheme.NavItem[] {
       activeMatch: '/nodejs/',
     },
     {
-      text: 'Vue Router',
-      link: '/vue-router/essentials/01-getting-started',
-      activeMatch: '/vue-router/',
+      text: 'Vue',
+      items: [
+        { text: 'vue.js', link: '/vue/vue.js/01-get-started', activeMatch: '/vue.js/' },
+        { text: 'vue-router', link: '/vue/vue-router/01-getting-started', activeMatch: '/vue-router/' },
+      ],
+      activeMatch: '/vue/',
     },
     {
       text: 'Others',

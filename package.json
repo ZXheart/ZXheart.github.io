@@ -19,15 +19,14 @@
     "markdown-it-footnote": "^4.0.0"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^4.1.1",
-    "@nolebase/vitepress-plugin-enhanced-readabilities": "^2.13.0",
+    "@antfu/eslint-config": "^4.3.0",
+    "@nolebase/vitepress-plugin-enhanced-readabilities": "^2.15.0",
     "@types/markdown-it-footnote": "^3.0.4",
-    "@unocss/core": "^65.4.3",
-    "@unocss/transformer-directives": "^65.4.3",
-    "eslint": "^9.20.0",
+    "@unocss/core": "^65.5.0",
+    "@unocss/transformer-directives": "^65.5.0",
+    "eslint": "^9.21.0",
     "typescript": "^5.7.3",
-    "unocss": "^65.4.3",
-    "vite": "^6.1.0",
+    "unocss": "^65.5.0",
     "vitepress": "1.6.3",
     "vue": "^3.5.13"
   }
