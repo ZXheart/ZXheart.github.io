@@ -14,8 +14,7 @@ export function sidebarOthers(): DefaultTheme.SidebarItem[] {
       text: 'something others',
       collapsed: false,
       items: [
-        { text: 'Vim', link: 'vim/about-vim' },
-        { text: 'Vim commands', link: 'vim/vim-commands' },
+        { text: 'SMB', link: '01-smb' },
       ],
     },
   ]

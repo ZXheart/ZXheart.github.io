@@ -4,7 +4,7 @@ import UnoCSS from 'unocss/vite'
 
 import { defineConfig } from 'vitepress'
 
-import { nav, sidebarCSS, sidebarEg, sidebarGithub, sidebarJS, sidebarNodejs, sidebarOthers, sidebarVitePress, sidebarVue } from './theme-config'
+import { nav, sidebarCSS, sidebarEg, sidebarJS, sidebarNodejs, sidebarOthers, sidebarReact, sidebarTS, sidebarVue } from './theme-config'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -16,7 +16,7 @@ export default defineConfig({
   lastUpdated: true,
   markdown: {
     lineNumbers: true,
-    config: md => {
+    config: (md) => {
       md.use(cjk_breaks)
       md.use(footnote_plugin)
     },
@@ -40,12 +40,12 @@ export default defineConfig({
     nav: nav(),
     sidebar: {
       '/javascript/': { base: '/javascript/', items: sidebarJS() },
+      '/typescript/': { base: '/typescript/', items: sidebarTS() },
       '/examples/': { base: '/examples/', items: sidebarEg() },
-      '/github/': { base: '/github/', items: sidebarGithub() },
-      '/vite-press/': { base: '/vite-press/', items: sidebarVitePress() },
       '/css/': { base: '/css/', items: sidebarCSS() },
       '/nodejs/': { base: '/nodejs/', items: sidebarNodejs() },
       '/vue/': { base: '/vue/', items: sidebarVue() },
+      '/react/': { base: '/vue/', items: sidebarReact() },
       '/others/': { base: '/others/', items: sidebarOthers() },
     },
     socialLinks: [{ icon: 'github', link: 'https://github.com/ZXheart/ZXheart.github.io' }],

@@ -37,6 +37,7 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
             { text: '#sort', link: 'basic/01-array/18-sort' },
             { text: '#splice', link: 'basic/01-array/19-splice' },
             { text: '#unshift', link: 'basic/01-array/20-unshift' },
+            { text: '#from', link: 'basic/01-array/21-from' },
           ],
         },
         {

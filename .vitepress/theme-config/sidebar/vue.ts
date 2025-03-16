@@ -15,5 +15,20 @@ export function sidebarVue(): DefaultTheme.SidebarItem[] {
         { text: 'bala bala', link: 'vue-router/02-navigation-guards' },
       ],
     },
+    {
+      text: 'vitepress',
+      collapsed: false,
+      items: [
+        {
+          text: 'Deployment process',
+          collapsed: false,
+          items: [
+            { text: '开始', link: 'vitepress/deployment/01-start' },
+            { text: '配置', link: 'vitepress/deployment/02-configure' },
+            { text: '部署', link: 'vitepress/deployment/03-deploy' },
+          ],
+        },
+      ],
+    },
   ]
 }
