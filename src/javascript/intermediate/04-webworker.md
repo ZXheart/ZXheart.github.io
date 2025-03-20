@@ -4,7 +4,7 @@
 
 是的，其运行在单独的线程中，因此它可以并行执行任务，不会阻塞主线程。
 
-- **主线程和 Worker 线程是完全分开的，**它们不能直接共享变量，只能通过消息传递进行通信。
+- **主线程和 Worker 线程是完全分开的**，它们不能直接共享变量，只能通过消息传递进行通信。
 - **每个 Web Worker 都有自己的事件循环**，它不会影响主线程的事件循环。
 
 ## Web Worker 运行的任务在哪个队列？
@@ -91,7 +91,7 @@ function fibonacci(n) {
 
 ## 共享 Worker
 
-`SharedWorker`是一种 Web Worker，它允许多个浏览器上下文（如多个标签页，iframe 或同一标签页中的不同脚本）共享同一个 WOrker 实例。`SharedWorker`
+`SharedWorker`是一种 Web Worker，它允许多个浏览器上下文（如多个标签页，iframe 或同一标签页中的不同脚本）共享同一个 Worker 实例。`SharedWorker`
 只能在同源（相同协议、域名和端口）下的多个标签或 iframe 中共享，不能跨域共享。
 
 ### index.html
