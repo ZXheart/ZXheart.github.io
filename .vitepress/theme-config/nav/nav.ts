@@ -19,18 +19,13 @@ export function nav(): DefaultTheme.NavItem[] {
       activeMatch: '/javascript/',
     },
     {
-      text: 'Github',
+      text: 'Typescript',
       items: [
-        { text: 'Github register', link: '/github/basic/register', activeMatch: '/basic/' },
-        { text: 'Github actions', link: '/github/actions/actions', activeMatch: '/actions/' },
+        { text: 'Basic', link: '/typescript/basic/01-dont-know', activeMatch: '/basic/' },
       ],
-      activeMatch: '/github/',
+      activeMatch: '/typescript/',
     },
-    {
-      text: 'VitePress',
-      items: [{ text: 'Deployment process', link: '/vite-press/deployment/01-start', activeMatch: '/deployment/' }],
-      activeMatch: '/vite-press/',
-    },
+
     {
       text: 'CSS',
       items: [
@@ -53,13 +48,26 @@ export function nav(): DefaultTheme.NavItem[] {
       items: [
         { text: 'vue.js', link: '/vue/vue.js/01-get-started', activeMatch: '/vue.js/' },
         { text: 'vue-router', link: '/vue/vue-router/01-getting-started', activeMatch: '/vue-router/' },
+        { text: 'vitepress', link: '/vue/vitepress/deployment/01-start', activeMatch: '/vitepress/' },
       ],
       activeMatch: '/vue/',
     },
     {
+      text: 'React',
+      items: [
+        { text: 'react.js', link: '/react/react.js/01-get-started', activeMatch: '/react.js/' },
+        { text: 'zustand', link: '/react/zustand/01-get-started', activeMatch: '/zustand/' },
+      ],
+      activeMatch: '/react/',
+    },
+    {
       text: 'Others',
-      items: [{ text: 'Vim', link: '/others/vim/about-vim', activeMatch: '/about-vim' }],
+      items: [
+        { text: 'Vim', link: '/others/vim/about-vim', activeMatch: '/about-vim' },
+
+      ],
       activeMatch: '/others/',
     },
+
   ]
 }
