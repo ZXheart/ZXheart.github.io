@@ -14,6 +14,13 @@ export function sidebarReact(): DefaultTheme.SidebarItem[] {
         { text: 'Get Started', link: 'zustand/01-get-started' },
       ],
     },
+    {
+      text: 'redux',
+      collapsed: false,
+      items: [
+        { text: 'Get Started', link: 'redux/01-get-started' },
+      ],
+    },
 
   ]
 }

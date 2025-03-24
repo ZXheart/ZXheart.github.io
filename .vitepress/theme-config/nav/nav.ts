@@ -57,6 +57,7 @@ export function nav(): DefaultTheme.NavItem[] {
       items: [
         { text: 'react.js', link: '/react/react.js/01-get-started', activeMatch: '/react.js/' },
         { text: 'zustand', link: '/react/zustand/01-get-started', activeMatch: '/zustand/' },
+        { text: 'redux', link: '/react/redux/01-get-started', activeMatch: '/redux/' },
       ],
       activeMatch: '/react/',
     },

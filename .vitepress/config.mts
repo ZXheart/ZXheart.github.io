@@ -45,7 +45,7 @@ export default defineConfig({
       '/css/': { base: '/css/', items: sidebarCSS() },
       '/nodejs/': { base: '/nodejs/', items: sidebarNodejs() },
       '/vue/': { base: '/vue/', items: sidebarVue() },
-      '/react/': { base: '/vue/', items: sidebarReact() },
+      '/react/': { base: '/react/', items: sidebarReact() },
       '/others/': { base: '/others/', items: sidebarOthers() },
     },
     socialLinks: [{ icon: 'github', link: 'https://github.com/ZXheart/ZXheart.github.io' }],

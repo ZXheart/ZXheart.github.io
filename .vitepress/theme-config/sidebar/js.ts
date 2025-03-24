@@ -13,6 +13,7 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
         { text: '稀疏数组', link: 'basic/05-sparse-arrays' },
         { text: 'for', link: 'basic/06-for' },
         { text: 'hard-symbolic-link', link: 'basic/07-hard-symbolic-link' },
+        { text: 'arrow-function', link: 'basic/08-arrow-function' },
         {
           text: 'Array',
           collapsed: true,
