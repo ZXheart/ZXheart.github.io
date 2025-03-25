@@ -77,4 +77,4 @@ your-project-name
 $ pnpm docs:dev
 ```
 
-至此，打开浏览器即可查看效果了，但是还有一些东西需要[配置](/vite-press/deployment/02-configure)
+至此，打开浏览器即可查看效果了，此外还有一些东西需要[配置](/vue/vitepress/deployment/02-configure)

@@ -2,7 +2,7 @@
 
 ## MAC 通过 SMB 访问 Windows 共享文件夹
 
-[SMB-Server Message Block](<(https://zh.wikipedia.org/wiki/%E4%BC%BA%E6%9C%8D%E5%99%A8%E8%A8%8A%E6%81%AF%E5%8D%80%E5%A1%8A)>)
+[SMB-Server Message Block](https://zh.wikipedia.org/wiki/%E4%BC%BA%E6%9C%8D%E5%99%A8%E8%A8%8A%E6%81%AF%E5%8D%80%E5%A1%8A)
 
 ## Widows 设置
 
