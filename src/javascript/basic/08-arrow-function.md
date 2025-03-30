@@ -19,9 +19,24 @@ const createThunkMiddleware =
 这一串箭头确实给我射晕了。
 
 ```javascript
-const test = arg => {
-  return arg[0] + arg[1]
+function foo(item) {
+  return function (it) {
+    return function (i) {
+      console.log(item, it, i)
+    }
+  }
 }
+// 等价于
+const foo1 = item => it => i => console.log(item, it, i)
+
+// 使用
+function test(fn) {
+  const item = 5
+  const it = 6
+  const i = 7
+  fn(item)(it)(i)
+}
+test(foo)
 ```
 
 ```javascript

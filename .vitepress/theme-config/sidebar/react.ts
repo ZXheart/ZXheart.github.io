@@ -5,7 +5,10 @@ export function sidebarReact(): DefaultTheme.SidebarItem[] {
     {
       text: 'React.js',
       collapsed: false,
-      items: [{ text: 'get started', link: 'react.js/01-get-started' }],
+      items: [
+        { text: 'get started', link: 'react.js/01-get-started' },
+        { text: 'Hooks', link: 'react.js/02-hooks' },
+      ],
     },
     {
       text: 'zustand',
@@ -19,6 +22,7 @@ export function sidebarReact(): DefaultTheme.SidebarItem[] {
       collapsed: false,
       items: [
         { text: 'Get Started', link: 'redux/01-get-started' },
+        { text: 'Go on', link: 'redux/02-go-on' },
       ],
     },
 
