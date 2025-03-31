@@ -11,6 +11,13 @@ export function sidebarOthers(): DefaultTheme.SidebarItem[] {
       ],
     },
     {
+      text: 'Network',
+      collapsed: false,
+      items: [
+        { text: 'Network', link: 'network/01-get-started' },
+      ],
+    },
+    {
       text: 'something others',
       collapsed: false,
       items: [

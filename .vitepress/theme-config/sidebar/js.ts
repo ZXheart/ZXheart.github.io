@@ -85,6 +85,7 @@ export function sidebarJS(): DefaultTheme.SidebarItem[] {
         { text: 'apply.bind', link: 'intermediate/10-apply.bind' },
         { text: 'prototype-diagram', link: 'intermediate/11-prototype-diagram' },
         { text: 'fibonacci', link: 'intermediate/12-fibonacci' },
+        { text: 'async-await', link: 'intermediate/13-async-await' },
       ],
     },
     {

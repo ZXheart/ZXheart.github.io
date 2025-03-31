@@ -65,6 +65,7 @@ export function nav(): DefaultTheme.NavItem[] {
       text: 'Others',
       items: [
         { text: 'Vim', link: '/others/vim/about-vim', activeMatch: '/about-vim' },
+        { text: 'Network', link: '/others/network/01-get-started', activeMatch: '/network' },
 
       ],
       activeMatch: '/others/',
