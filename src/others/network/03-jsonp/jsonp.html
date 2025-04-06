@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>jsonp</title>
+  </head>
+  <body>
+    <!-- <script>
+      function callback(data) {
+        console.log('get data from jsonp', data)
+      }
+    </script>
+    <script src="http://localhost:3030/jsonp"></script> -->
+
+    <script>
+      function jsonp(url, params) {
+        // 1.拼接url
+        const paramsStr = Object.keys(params)
+          .map(key => `${key}=${params[key]}`)
+          .join('&')
+        const callbackName = `__callback_${Math.random().toString(36).slice(2, 10)}_${Date.now()}`
+        const jsonpUrl = `${url}?callback=${callbackName}${paramsStr ? `&${paramsStr}` : ''}`
+
+        // 2.创建Promise对象
+        return new Promise(resolve => {
+          const script = document.createElement('script')
+          script.src = jsonpUrl
+
+          // 3. 创建全局函数
+          window[callbackName] = function (data) {
+            resolve(data)
+            // 4.删除脚本标签和全局函数
+            script.remove()
+            delete window[callbackName]
+          }
+
+          document.body.appendChild(script)
+        })
+      }
+      jsonp('http://localhost:3030/jsonp', { name: 'Julien', age: 18 }).then(res => {
+        console.log('get data from jsonp', res)
+      })
+    </script>
+  </body>
+</html>

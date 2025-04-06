@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>upload progress monitoring</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      .add-wrapper {
+        width: 100px;
+        height: 100px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        position: relative;
+      }
+      .plus {
+        width: 50px;
+        height: 50px;
+        line-height: 50px;
+        text-align: center;
+        background-color: #f0f0f0;
+        border-radius: 50%;
+        font-size: 24px;
+        color: #333;
+        cursor: pointer;
+
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      .uploaded-img {
+        /* display: none; */
+        visibility: hidden;
+        width: 100px;
+        height: 100px;
+        border-radius: 8px;
+      }
+      .upload-input {
+        display: none;
+      }
+      .progress {
+        width: 100%;
+        height: 5px;
+        background-color: #f0f0f0;
+        border-radius: 8px;
+        position: absolute;
+        bottom: 10px;
+        left: 0;
+        display: none;
+        overflow: hidden;
+      }
+      .progress-bar {
+        width: 0%;
+        height: 5px;
+        background-color: #4caf50;
+        border-radius: 8px;
+        transition: width 0.4s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="add-wrapper">
+      <label for="upload-input" class="plus">+</label>
+      <input type="file" name="avatar" id="upload-input" class="upload-input" accept="image/png, image/jpeg" />
+      <img class="uploaded-img" src="http://mdrs.yuanjin.tech/FgMwAPYq17So9nwVH44ltDHo7u3c" alt="" />
+      <div class="progress">
+        <div class="progress-bar"></div>
+      </div>
+    </div>
+
+    <script>
+      const $ = document.querySelector.bind(document)
+      const doms = {
+        wrapper: $('.add-wrapper'),
+        plus: $('.plus'),
+        uploadedImg: $('.uploaded-img'),
+        uploadInput: $('#upload-input'),
+        progressBar: $('.progress-bar'),
+      }
+
+      doms.uploadInput.addEventListener('change', e => {
+        const file = e.target.files[0]
+        if (!file) return
+
+        const reader = new FileReader()
+        reader.readAsDataURL(file)
+        reader.onload = function (e) {
+          doms.uploadedImg.src = e.target.result
+        }
+        showUploading()
+
+        const formData = new FormData()
+        formData.append('avatar', file, file.name) // input框中的name属性；二进制文件对象；文件名
+        const xhr = new XMLHttpRequest()
+        xhr.open('POST', 'http://localhost:3030/upload')
+
+        xhr.upload.onprogress = function (e) {
+          if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 100)
+            doms.progressBar.style.width = `${percentComplete}%`
+          }
+        }
+
+        xhr.onload = function () {
+          if (xhr.status === 200) {
+            const res = JSON.parse(xhr.responseText)
+            console.log(res)
+          } else {
+            console.log('上传失败')
+          }
+        }
+
+        xhr.send(formData)
+      })
+
+      function showUploading() {
+        doms.plus.style.display = 'none'
+        doms.uploadedImg.style.visibility = 'visible'
+        doms.progressBar.style.width = '0%'
+        doms.progressBar.parentElement.style.display = 'block'
+      }
+    </script>
+  </body>
+</html>

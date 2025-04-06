@@ -185,7 +185,7 @@ setTimeout(() => {
    - `requestAnimationFrame()`
    - `intersectionObserver` 回调
    - 特点：
-     - 以**每秒 60 帧（16.67ms 一次）**的速度执行（如果可能）
+     - 以**每秒 60 帧（16.67ms 一次）** 的速度执行（如果可能）
      - 主要用于**流畅的动画和 UI 更新**
 
 4. **定时器任务队列（Timer Tasks）**（较低优先级）
