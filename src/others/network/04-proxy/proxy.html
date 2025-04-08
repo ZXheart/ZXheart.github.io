@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Proxy</title>
+  </head>
+  <body>
+    <div class="hero-list"></div>
+
+    <script>
+      const $ = document.querySelector.bind(document)
+      fetch('http://localhost:3030/proxy')
+        .then(res => res.json())
+        .then(res => {
+          console.log('get data from proxy', res)
+          res.hero.forEach(hero => {
+            const div = document.createElement('div')
+            div.innerHTML = `
+            <p>name:${hero.name}-${hero.title}-${hero.alias}</p>
+            `
+            $('.hero-list').appendChild(div)
+          })
+        })
+    </script>
+  </body>
+</html>

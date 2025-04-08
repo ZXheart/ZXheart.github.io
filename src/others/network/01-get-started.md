@@ -666,7 +666,7 @@ fetch(url, {
 
 #### 细节 2 - 关于跨域获取响应头
 
-在跨域访问时，JS 只能拿到一些最基本的响应头，如：Cache-Control、Content-Language、COntent-Type、Expires、Last-Modified、Pragma，如果要访问其他头，则需要服务器设置本响应头。
+在跨域访问时，JS 只能拿到一些最基本的响应头，如：Cache-Control、Content-Language、Content-Type、Expires、Last-Modified、Pragma，如果要访问其他头，则需要服务器设置本响应头。
 
 `Access-Control-Expose-Headers`头让服务器把允许浏览器访问的头放入白名单，例如：
 
@@ -745,7 +745,7 @@ export default function jsonp(url: string, params: object) {
     const script = document.createElement('script')
     script.src = jsonpUrl
 
-    // 3. 创建全局函数
+    // 3.创建全局函数
     ;(window as any)[callbackName] = function (data: any) {
       resolve(data)
       // 4.删除脚本标签和全局函数
@@ -767,3 +767,23 @@ export default function jsonp(url: string, params: object) {
 **除非是特殊原因，否则永远不应该使用 JSONP**
 
 ### 代理
+
+CORS 和 JSONP 均需要服务器是「自己人」。
+
+既然跨域是浏览器同源策略的限制，那我们可以通过自己搭建代理服务器请求跨域资源，然后再把结果返回给浏览器。
+
+nodejs
+
+```javascript
+import { Router } from 'express'
+import axios from 'axios'
+
+const router = Router()
+
+router.get('/', async (req, res) => {
+  const resp = await axios.get('https://game.gtimg.cn/images/lol/act/img/js/heroList/hero_list.js?ts=2906872')
+  res.send(resp.data)
+})
+
+export default router
+```
