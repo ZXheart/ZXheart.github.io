@@ -15,6 +15,8 @@ export function sidebarOthers(): DefaultTheme.SidebarItem[] {
       collapsed: false,
       items: [
         { text: 'Network', link: 'network/01-get-started' },
+        { text: 'Details', link: 'network/02-details' },
+        { text: 'WebSocket', link: 'network/03-websocket' },
       ],
     },
     {
