@@ -23,7 +23,7 @@ export function sidebarOthers(): DefaultTheme.SidebarItem[] {
       text: 'Osteosarcoma',
       collapsed: false,
       items: [
-        { text: 'Osteosarcoma', link: 'osteosarcoma/catalog' },
+        { text: 'Catalog', link: 'osteosarcoma/catalog' },
       ],
     },
     {
