@@ -1,12 +1,15 @@
 {
   "compilerOptions": {
+    // "ignoreDeprecations": "6.0",
     "composite": true,
     "target": "ES2022",
     "lib": ["DOM", "ESNext"],
-    "baseUrl": "./",
+    "baseUrl": ".",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
+
+    "typeRoots": ["./src/types", "./node_modules/@types"],
     // "preserveSymlinks": true,
     "allowJs": true,
     "strict": true,
@@ -33,7 +36,9 @@
     "**/*.vue",
     "**/*.md",
     "**/*.d.ts",
-    "docs/.vitepress/**/*.ts"
+    "docs/.vitepress/**/*.ts",
+    ".vitepress/**/*.ts",
+    ".vitepress/**/*.mts"
   ],
   "vueCompilerOptions": {
     "vitePressExtensions": [".md"]
