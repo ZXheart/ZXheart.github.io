@@ -3,11 +3,9 @@
 layout: home
 
 hero:
-  name: 'Keep going'
-  text: 'Force yourself to make a change'
-  tagline:
-    If you can't fly then run, if you can't run then walk, if you can't walk then crawl, but whatever you do you have to
-    keep moving forward.
+  name: 'Welcome!'
+  text: 'Have a good one!'
+  tagline: 'Thanks AI for helping me so much!'
   actions:
     - theme: brand
       text: Markdown Examples
@@ -19,10 +17,10 @@ hero:
 features:
   - title: Feature A
     details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature B
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature C
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  # - title: Feature B
+  #   details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  # - title: Feature C
+  #   details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
 ---
 
 <style>

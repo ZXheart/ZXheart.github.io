@@ -4,10 +4,10 @@
     "composite": true,
     "target": "ES2022",
     "lib": ["DOM", "ESNext"],
-    "baseUrl": ".",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
+    
 
     "typeRoots": ["./src/types", "./node_modules/@types"],
     // "preserveSymlinks": true,
@@ -43,5 +43,5 @@
   "vueCompilerOptions": {
     "vitePressExtensions": [".md"]
   },
-  "exclude": ["**/.cache", "**/.temp", "**/.tmp", "**/cache", "**/temp", "**/tmp", "**/dist", "**/node_modules", "eslint.config.js"]
+  "exclude": ["**/.cache", "**/.temp", "**/.tmp", "**/cache", "**/temp", "**/tmp", "**/dist", "**/node_modules", "eslint.config.mjs"]
 }
